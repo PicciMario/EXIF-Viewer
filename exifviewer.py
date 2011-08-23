@@ -282,7 +282,7 @@ class ExifData():
 			elif (value == 8):
 				returnString += "Landscape mode (for landscape photos with the background in focus)"
 			else:
-				returnString += "Reserved value."
+				returnString += "Reserved value"
 										
 		# Gps Data
 		# decoded
