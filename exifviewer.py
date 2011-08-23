@@ -257,15 +257,33 @@ class ExifData():
 				returnString += "\n\tXResolution and YResolution measured in pixels/inch"
 			elif (value == 3):
 				returnString += "\n\tXResolution and YResolution measured in pixels/centimeter"
-				
-		# Maker Note
-		# (will be printed as hex data)
-		elif (tag == 37500):
-			returnString += "\n%s\t%s"%(tag, decoded)
-			for line in string.split(self.dumpHex(value, length=16), '\n'):
-				if (len(line) > 0):
-					returnString += "\n\t%s"%line
 	
+		# Exposure program
+		elif (tag == 34850):
+			returnString += "\n%s\t%s: %s"%(tag, decoded, value)
+			
+			returnString += "\n\t"
+			if (value == 0):
+				returnString += "Not defined"
+			elif (value == 1):
+				returnString += "Manual"
+			elif (value == 2):
+				returnString += "Normal program"
+			elif (value == 3):
+				returnString += "Aperture priority"
+			elif (value == 4):
+				returnString += "Shutter priority"
+			elif (value == 5):
+				returnString += "Creative program (biased toward depth of field)"
+			elif (value == 6):
+				returnString += "Action program (biased toward fast shutter speed)"
+			elif (value == 7):
+				returnString += "Portrait mode (for closeup photos with the background out of focus)"
+			elif (value == 8):
+				returnString += "Landscape mode (for landscape photos with the background in focus)"
+			else:
+				returnString += "Reserved value."
+										
 		# Gps Data
 		# decoded
 		elif (tag == 34853):
@@ -283,7 +301,15 @@ class ExifData():
 			
 			for item in gpsData['other']:
 				returnString = returnString + "\n\t%s:\t%s"%(item[0], item[1])
-		
+
+		# Maker Note
+		# (will be printed as hex data)
+		elif (tag == 37500):
+			returnString += "\n%s\t%s"%(tag, decoded)
+			for line in string.split(self.dumpHex(value, length=16), '\n'):
+				if (len(line) > 0):
+					returnString += "\n\t%s"%line
+							
 		# Subject location
 		elif (tag == 37396):
 			returnString += "\n%s\t%s"%(tag, decoded)
