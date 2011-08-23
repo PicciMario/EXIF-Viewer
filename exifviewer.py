@@ -217,112 +217,87 @@ class ExifData():
 				result += "(analysis limit reached after %i bytes)"%limit
 		return result
 	
-	def exifToString(self, passedTag):
+	def exifToArray(self, passedTag):
 		
 		tag = passedTag[0]
 		decoded = passedTag[1]
 		value = passedTag[2]
 	
 		returnString = ""
+		
+		comments = []
 	
 		# Orientation
 		if (tag == 274):
-			returnString += "\n%s\t%s: %s"%(tag, decoded, value)
 			
-			returnString += "\n\t"
-			if (value == 1):
-				returnString += "The 0th row is at the visual top of the image, and the 0th column is the visual left-hand side."
-			elif (value == 2):
-				returnString += "The 0th row is at the visual top of the image, and the 0th column is the visual right-hand side."
-			elif (value == 3):
-				returnString += "The 0th row is at the visual bottom of the image, and the 0th column is the visual right-hand side."
-			elif (value == 4):
-				returnString += "The 0th row is at the visual bottom of the image, and the 0th column is the visual left-hand side."
-			elif (value == 5):
-				returnString += "The 0th row is the visual left-hand side of the image, and the 0th column is the visual top."
-			elif (value == 6):
-				returnString += "The 0th row is the visual right-hand side of the image, and the 0th column is the visual top."
-			elif (value == 7):
-				returnString += "The 0th row is the visual right-hand side of the image, and the 0th column is the visual bottom."
-			elif (value == 8):
-				returnString += "The 0th row is the visual left-hand side of the image, and the 0th column is the visual bottom."	
+			values = [
+				"Invalid value.",
+				"The 0th row is at the visual top of the image, and the 0th column is the visual left-hand side.",
+				"The 0th row is at the visual top of the image, and the 0th column is the visual right-hand side.",
+				"The 0th row is at the visual bottom of the image, and the 0th column is the visual right-hand side.",
+				"The 0th row is at the visual bottom of the image, and the 0th column is the visual left-hand side.",
+				"The 0th row is the visual left-hand side of the image, and the 0th column is the visual top.",
+				"The 0th row is the visual right-hand side of the image, and the 0th column is the visual top.",
+				"The 0th row is the visual right-hand side of the image, and the 0th column is the visual bottom.",
+				"The 0th row is the visual left-hand side of the image, and the 0th column is the visual bottom."
+			]
+			
+			if (value > 0 and value <= 8):
+				comments.append(values[value])	
 			else:
-				returnString += "Value unknown."				
+				comments.append("Value unknown.")				
 		
 		# Resolution Unit
 		elif (tag == 296):
-			returnString += "\n%s\t%s: %s"%(tag, decoded, value)
 			
 			if (value == 2):
-				returnString += "\n\tXResolution and YResolution measured in pixels/inch"
+				comments.append("XResolution and YResolution measured in pixels/inch.")
 			elif (value == 3):
-				returnString += "\n\tXResolution and YResolution measured in pixels/centimeter"
-	
+				comments.append("XResolution and YResolution measured in pixels/centimeter")
+
 		# Exposure program
 		elif (tag == 34850):
-			returnString += "\n%s\t%s: %s"%(tag, decoded, value)
+
+			values = [
+				"Not defined",
+				"Manual",
+				"Normal program",
+				"Aperture priority",
+				"Shutter priority",
+				"Creative program (biased toward depth of field)",
+				"Action program (biased toward fast shutter speed)",
+				"Portrait mode (for closeup photos with the background out of focus)",
+				"Landscape mode (for landscape photos with the background in focus)"
+			]
 			
-			returnString += "\n\t"
-			if (value == 0):
-				returnString += "Not defined"
-			elif (value == 1):
-				returnString += "Manual"
-			elif (value == 2):
-				returnString += "Normal program"
-			elif (value == 3):
-				returnString += "Aperture priority"
-			elif (value == 4):
-				returnString += "Shutter priority"
-			elif (value == 5):
-				returnString += "Creative program (biased toward depth of field)"
-			elif (value == 6):
-				returnString += "Action program (biased toward fast shutter speed)"
-			elif (value == 7):
-				returnString += "Portrait mode (for closeup photos with the background out of focus)"
-			elif (value == 8):
-				returnString += "Landscape mode (for landscape photos with the background in focus)"
+			if (value > 0 and value <= 8):
+				comments.append(values[value])
 			else:
-				returnString += "Reserved value"
+				comments.append("Reserved value.")
 										
 		# Gps Data
 		# decoded
 		elif (tag == 34853):
-			returnString += "\n%s\t%s"%(tag, decoded)
+
 			gpsData = self.decodeGpsData(self.getGpsData(value))
 			
 			if (gpsData['lat']):
-				returnString += "\n\tLatitude:\t%.8f"%gpsData['lat']
+				comments.append("Latitude: %.8f"%gpsData['lat'])
 			if (gpsData['lon']):
-				returnString += "\n\tLongitude:\t%.8f"%gpsData['lon']
+				comments.append("Longitude: %.8f"%gpsData['lon'])
 			if (gpsData['imgDir'] and gpsData['imgDirRef']):
-				returnString += "\n\tImg dir:\t%.2f %s"%(gpsData['imgDir'], gpsData['imgDirRef'])
+				comments.append("Img dir: %.2f %s"%(gpsData['imgDir'], gpsData['imgDirRef']))
 			if (gpsData['timeStamp']):
-				returnString += "\n\tTimestamp:\t%s"%gpsData['timeStamp']
+				comments.append("Timestamp: %s"%gpsData['timeStamp'])
 			
 			for item in gpsData['other']:
-				returnString = returnString + "\n\t%s:\t%s"%(item[0], item[1])
+				comments.append("%s: %s"%(item[0], item[1]))
 
-		# Maker Note
-		# (will be printed as hex data)
-		elif (tag == 37500):
-			returnString += "\n%s\t%s"%(tag, decoded)
-			for line in string.split(self.dumpHex(value, length=16), '\n'):
-				if (len(line) > 0):
-					returnString += "\n\t%s"%line
-							
-		# Subject location
-		elif (tag == 37396):
-			returnString += "\n%s\t%s"%(tag, decoded)
-			returnString += "\n\tMain subject of the photo in X: %s and Y: %s"%(value[0], value[1])
-			
-			if (len(value) == 3):
-				returnString += "\n\tMain subject in a circle of diameter %s"%(value[2])
-			elif (len(value) == 4):
-				returnString += "\n\tMain subject in a rectangle of width %s and height %s"%(value[2], value[3])
-		
+			# clear value
+			value = ""
+
 		# Flash
 		elif (tag == 37385):
-			returnString += "\n%s\t%s: %s"%(tag, decoded, bin(value))
 			
 			flashString = []
 			
@@ -352,14 +327,61 @@ class ExifData():
 				flashString = [("No flash function.")]
 		
 			for line in flashString:
-				returnString += "\n\t%s"%line
+				comments.append(line)
+			
+			# value in bin
+			value = bin(value)
+
+		# Subject location
+		elif (tag == 37396):
+			comments.append("Main subject of the photo in X: %s and Y: %s"%(value[0], value[1]))
+			
+			if (len(value) == 3):
+				comments.append("Main subject in a circle of diameter %s"%(value[2]))
+			elif (len(value) == 4):
+				comments.append("Main subject in a rectangle of width %s and height %s"%(value[2], value[3]))
+				
+		# Maker Note
+		# (will be printed as hex data)
+		elif (tag == 37500):
+			
+			for line in string.split(self.dumpHex(value, length=16), '\n'):
+				if (len(line) > 0):
+					comments.append(line)
+			
+			# clear value
+			value = ""
+								
 		
 		# Other tags
 		else:
 			if (isinstance(value, tuple)):
 				if (len(value) == 2):
 					value = "%.4f"%self._rational_to_num(value)
-			returnString = returnString + "\n%s\t%s: %s"%(tag, decoded,  value)	
+	
+		# Building return array
+		ret = {}
+		ret['tag'] = tag
+		ret['decoded'] = decoded
+		ret['value'] = value
+		ret['comments'] = comments
+		
+		return ret
+	
+	def exifToString(self, passedTag):
+	
+		# Analyze tag
+		analyzedTag = self.exifToArray(passedTag)
+		
+		tag = analyzedTag['tag']
+		decoded = analyzedTag['decoded']
+		value = analyzedTag['value']
+		comments = analyzedTag['comments']
+		
+		# Building return string
+		returnString = "%s\t%s: %s"%(tag, decoded, value)
+		for line in comments:
+			returnString += "\n\t%s"%line
 		
 		return returnString
 	
