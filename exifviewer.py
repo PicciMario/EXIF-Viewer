@@ -249,6 +249,15 @@ class ExifData():
 			else:
 				returnString += "Value unknown."				
 		
+		# Resolution Unit
+		elif (tag == 296):
+			returnString += "\n%s\t%s: %s"%(tag, decoded, value)
+			
+			if (value == 2):
+				returnString += "\n\tXResolution and YResolution measured in pixels/inch"
+			elif (value == 3):
+				returnString += "\n\tXResolution and YResolution measured in pixels/centimeter"
+				
 		# Maker Note
 		# (will be printed as hex data)
 		elif (tag == 37500):
