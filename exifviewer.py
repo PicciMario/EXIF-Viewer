@@ -296,6 +296,26 @@ class ExifData():
 			# clear value
 			value = ""
 
+		# Metering Mode
+		elif (tag == 37383):
+		
+			values = [
+				"unknown",
+				"Average",
+				"CenterWeightedAverage",
+				"Spot",
+				"MultiSpot",
+				"Pattern",
+				"Partial",				
+			]
+			
+			if (value >= 0 and value <= 6):
+				comments.append("Mode: %s"%values[value])
+			elif (value == 255):
+				comments.append("Mode: reserved")
+			else:
+				comments.append("Mode unknown")	
+
 		# Flash
 		elif (tag == 37385):
 			
@@ -350,8 +370,26 @@ class ExifData():
 					comments.append(line)
 			
 			# clear value
-			value = ""
-								
+			value = ""					
+		
+		# Sensing Method
+		elif (tag == 41495):
+		
+			values = [
+				"",
+				"Not defined",
+				"One-chip color area sensor",
+				"Two-chip color area sensor",
+				"Three-chip color area sensor",
+				"Color sequential area sensor",
+				"Trilinear sensor",
+				"Color sequential linear"				
+			]
+			
+			if (value > 0 and value <=8):
+				comments.append(values[value])
+			else:
+				comments.append("Value unknown.")
 		
 		# Other tags
 		else:
