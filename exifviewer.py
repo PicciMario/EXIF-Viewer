@@ -217,6 +217,19 @@ class ExifData():
 				result += "(analysis limit reached after %i bytes)"%limit
 		return result
 	
+	def stringHex(self, src, length=16, limit=16):
+		FILTER=''.join([(len(repr(chr(x)))==3) and chr(x) or '.' for x in range(256)])
+		N=0; result=''
+		while src:
+			s,src = src[:length],src[length:]
+			hexa = ' '.join(["0x%02X"%ord(x) for x in s])
+			s = s.translate(FILTER)
+			result += "%-*s" % (length*3, hexa)
+			N+=length
+			if (len(result) > limit):
+				src = "";
+		return result		
+	
 	def exifToArray(self, passedTag):
 		
 		tag = passedTag[0]
@@ -296,7 +309,28 @@ class ExifData():
 
 		# Components Configuration
 		elif (tag == 37121):
-			comments.append(self.dumpHex(value))
+			
+			values = {
+				0: "",
+				1: "Y",
+				2: "Cb",
+				3: "Cr",
+				4: "R",
+				5: "G",
+				6: "B"
+			}
+			
+			compString = ""
+			
+			if (len(value) == 4):
+				for char in value:
+					if (ord(char) in values):
+						compString += "%s "%values[ord(char)]
+					else:
+						compString += "?? "
+
+			value = self.stringHex(value)
+			comments.append(compString)
 			
 		# Metering Mode
 		elif (tag == 37383):
@@ -434,6 +468,9 @@ class ExifData():
 			if (isinstance(value, tuple)):
 				if (len(value) == 2):
 					value = "%.4f"%self._rational_to_num(value)
+			
+			if (tag in [41728, 41729, 41730]):
+				value = self.stringHex(value)		
 	
 		# Building return array
 		ret = {}
@@ -456,7 +493,7 @@ class ExifData():
 		
 		# Building return string
 		returnString = "%s\t%s: %s"%(tag, decoded, value)
-		for line in comments:
+		for line in comments:	
 			returnString += "\n\t%s"%line
 		
 		return returnString
