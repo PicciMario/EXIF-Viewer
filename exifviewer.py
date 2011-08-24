@@ -294,6 +294,10 @@ class ExifData():
 			# clear value
 			value = ""
 
+		# Components Configuration
+		elif (tag == 37121):
+			comments.append(self.dumpHex(value))
+			
 		# Metering Mode
 		elif (tag == 37383):
 		
@@ -401,6 +405,12 @@ class ExifData():
 			# clear value
 			value = ""					
 		
+		# UserComment
+		elif (tag == 37510):
+			for line in string.split(self.dumpHex(value, length=16), '\n'):
+				if (len(line) > 0):
+					comments.append(line)
+
 		# Sensing Method
 		elif (tag == 41495):
 		
