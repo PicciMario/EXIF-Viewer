@@ -497,7 +497,33 @@ class ExifData():
 			if (len(value) >= 4):
 				horRep = (ord(value[0]) * 16) + ord(value[1])
 				verRep = (ord(value[2]) * 16) + ord(value[3])
-				comments.add("Hor rep: %i, Ver rep: %s"%(horRep, verRep))
+				comments.append("Horizontal repeat pixel unit: %i"%horRep)
+				comments.append("Vertical repeat pixel unit: %i"%verRep)
+			
+			values = {
+				0: "RED",
+				1: "GRE",
+				2: "BLU",
+				3: "CYA",
+				4: "MAG",
+				5: "YEL",
+				6: "WHI"
+			}
+			
+			pos = 0
+			row = ""
+			for char in value[4:]:
+				pos += 1
+				if (ord(char) in values):
+					row = "%s%s "%(row,values[ord(char)])
+				else:
+					row += "??? "
+				if (pos >= verRep):
+					comments.append(row)
+					row = ""
+					pos = 0
+				
+			value = self.stringHex(value)
 		
 		# Other tags
 		else:
