@@ -491,6 +491,14 @@ class ExifData():
 					
 			value = self.stringHex(value)
 		
+		# CFA Pattern
+		elif (tag == 41730):
+		
+			if (len(value) >= 4):
+				horRep = (ord(value[0]) * 16) + ord(value[1])
+				verRep = (ord(value[2]) * 16) + ord(value[3])
+				comments.add("Hor rep: %i, Ver rep: %s"%(horRep, verRep))
+		
 		# Other tags
 		else:
 			if (isinstance(value, tuple)):
