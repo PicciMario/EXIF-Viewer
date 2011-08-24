@@ -23,7 +23,7 @@
  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
-
+ 
 '''
 
 from PIL import Image
@@ -299,22 +299,53 @@ class ExifData():
 		# Metering Mode
 		elif (tag == 37383):
 		
-			values = [
-				"unknown",
-				"Average",
-				"CenterWeightedAverage",
-				"Spot",
-				"MultiSpot",
-				"Pattern",
-				"Partial",				
-			]
+			values = {
+				0: "unknown",
+				1: "Average",
+				2: "CenterWeightedAverage",
+				3: "Spot",
+				4: "MultiSpot",
+				5: "Pattern",
+				6: "Partial",
+				255: "Mode reserved"				
+			}
 			
-			if (value >= 0 and value <= 6):
+			if (value in values):
 				comments.append("Mode: %s"%values[value])
-			elif (value == 255):
-				comments.append("Mode: reserved")
 			else:
 				comments.append("Mode unknown")	
+
+		# Light Source
+		elif (tag == 37384):
+			
+			values = {
+				0: "Unknown",
+				1: "Daylight",
+				2: "Fluorescent",
+				3: "Tungsten (incandescent light)",
+				4: "Flash",
+				9: "Fine weather",
+				10: "Cloudy weather",
+				11: "Shade",
+				12: "Daylight fluorescent (D 5700 - 7100K)",
+				13: "Day white fluorescent (N 4600 - 5400K)",
+				14: "Cool white fluorescent (W 3900 - 4500K)",
+				15: "White fluorescent (WW 3200 - 3700K)",
+				17: "Standard light A",
+				18: "Standard light B",
+				19: "Standard light C",
+				20: "D55",
+				21: "D65",
+				22: "D75",
+				23: "D50",
+				24: "ISO studio tungsten",
+				255: "other light source"
+			}
+			
+			if (value in values):
+				comments.append(values[value])
+			else:
+				comments.append("Unknown value.")
 
 		# Flash
 		elif (tag == 37385):
