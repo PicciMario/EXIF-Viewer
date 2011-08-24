@@ -463,13 +463,41 @@ class ExifData():
 			else:
 				comments.append("Value unknown.")
 		
+		# File Source
+		elif (tag == 41728):
+		
+			values = {
+				3: "Digital Still Camera"
+			}
+			
+			if (ord(value) in values):
+				comments.append(values[ord(value)])
+			else:
+				comments.append("Value unknown")
+			
+			value = self.stringHex(value)
+		
+		# Scene Type
+		elif (tag == 41729):
+			
+			values = {
+				1: "A directly photographed image"	
+			}
+			
+			if (ord(value) in values):
+				comments.append(values[ord(value)])
+			else:
+				comments.append("Value unknown")
+					
+			value = self.stringHex(value)
+		
 		# Other tags
 		else:
 			if (isinstance(value, tuple)):
 				if (len(value) == 2):
 					value = "%.4f"%self._rational_to_num(value)
 			
-			if (tag in [41728, 41729, 41730]):
+			if (tag in [41729, 41730]):
 				value = self.stringHex(value)		
 	
 		# Building return array
