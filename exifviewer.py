@@ -230,17 +230,16 @@ class ExifData():
 		# Orientation
 		if (tag == 274):
 			
-			values = [
-				"Invalid value.",
-				"The 0th row is at the visual top of the image, and the 0th column is the visual left-hand side.",
-				"The 0th row is at the visual top of the image, and the 0th column is the visual right-hand side.",
-				"The 0th row is at the visual bottom of the image, and the 0th column is the visual right-hand side.",
-				"The 0th row is at the visual bottom of the image, and the 0th column is the visual left-hand side.",
-				"The 0th row is the visual left-hand side of the image, and the 0th column is the visual top.",
-				"The 0th row is the visual right-hand side of the image, and the 0th column is the visual top.",
-				"The 0th row is the visual right-hand side of the image, and the 0th column is the visual bottom.",
-				"The 0th row is the visual left-hand side of the image, and the 0th column is the visual bottom."
-			]
+			values = {
+				1: "The 0th row is at the visual top of the image, and the 0th column is the visual left-hand side.",
+				2: "The 0th row is at the visual top of the image, and the 0th column is the visual right-hand side.",
+				3: "The 0th row is at the visual bottom of the image, and the 0th column is the visual right-hand side.",
+				4: "The 0th row is at the visual bottom of the image, and the 0th column is the visual left-hand side.",
+				5: "The 0th row is the visual left-hand side of the image, and the 0th column is the visual top.",
+				6: "The 0th row is the visual right-hand side of the image, and the 0th column is the visual top.",
+				7: "The 0th row is the visual right-hand side of the image, and the 0th column is the visual bottom.",
+				8: "The 0th row is the visual left-hand side of the image, and the 0th column is the visual bottom."
+			}
 			
 			if (value > 0 and value <= 8):
 				comments.append(values[value])	
@@ -258,19 +257,18 @@ class ExifData():
 		# Exposure program
 		elif (tag == 34850):
 
-			values = [
-				"Not defined",
-				"Manual",
-				"Normal program",
-				"Aperture priority",
-				"Shutter priority",
-				"Creative program (biased toward depth of field)",
-				"Action program (biased toward fast shutter speed)",
-				"Portrait mode (for closeup photos with the background out of focus)",
-				"Landscape mode (for landscape photos with the background in focus)"
-			]
+			values = {
+				1: "Manual",
+				2: "Normal program",
+				3: "Aperture priority",
+				4: "Shutter priority",
+				5: "Creative program (biased toward depth of field)",
+				6: "Action program (biased toward fast shutter speed)",
+				7: "Portrait mode (for closeup photos with the background out of focus)",
+				8: "Landscape mode (for landscape photos with the background in focus)"
+			}
 			
-			if (value > 0 and value <= 8):
+			if (value in values):
 				comments.append(values[value])
 			else:
 				comments.append("Reserved value.")
@@ -406,18 +404,17 @@ class ExifData():
 		# Sensing Method
 		elif (tag == 41495):
 		
-			values = [
-				"",
-				"Not defined",
-				"One-chip color area sensor",
-				"Two-chip color area sensor",
-				"Three-chip color area sensor",
-				"Color sequential area sensor",
-				"Trilinear sensor",
-				"Color sequential linear"				
-			]
+			values = {
+				1: "Not defined",
+				2: "One-chip color area sensor",
+				3: "Two-chip color area sensor",
+				4: "Three-chip color area sensor",
+				5: "Color sequential area sensor",
+				6: "Trilinear sensor",
+				7: "Color sequential linear"				
+			}
 			
-			if (value > 0 and value <=8):
+			if (value in values):
 				comments.append(values[value])
 			else:
 				comments.append("Value unknown.")
