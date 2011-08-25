@@ -62,13 +62,21 @@ class ExifData():
 		# ----------- Open File Data ------------------------------------------------------------------------
 		
 		try:
-			i = Image.open(filename)
-			info = i._getexif()
+			imageRef = Image.open(filename)
+			
+			info = imageRef._getexif()
 			for tag, value in info.items():
 				decoded = TAGS.get(tag, tag)
 				self.exifs.append([tag, decoded, value])
 			self.exifs = sorted(self.exifs, key=lambda ret: ret[0])
 			self.filename = filename
+			
+			self.imageFormat = imageRef.format
+			self.imageMode = imageRef.mode
+			self.imageSize = "%sx%s"%(imageRef.size[0], imageRef.size[1])
+			self.imageWidth = imageRef.size[0]
+			self.imageHeight = imageRef.size[1]
+			
 			return 0
 		except:
 			self.log.error("Error while initializing EXIF data from input file.")
@@ -445,6 +453,13 @@ class ExifData():
 				if (len(line) > 0):
 					comments.append(line)
 
+		#Color Space
+		elif (tag == 40961):
+			if (value == 1):
+				comments.append("sRGB")
+			else:
+				comments.append("Uncalibrated")
+
 		# Sensing Method
 		elif (tag == 41495):
 		
@@ -561,37 +576,51 @@ class ExifData():
 		return returnString
 	
 	def printExifs(self):
-		print("\nList of EXIF tags for \"%s\":\n"%self.filename)
+		
+		print("\nAnalyzing file: \"%s\"\n"%self.filename)
+	
+		print "Image format: %s"%self.imageFormat
+		print "Image mode: %s"%self.imageMode
+		print "Image size: %s"%self.imageSize
+
+		print("\nList of EXIF tags:\n")
 		for element in self.exifs:
 			print(self.exifToString(element).strip('\n'))
 			  
 		print("\nFound %i tags.\n"%len(self.exifs))
 
+	def getExifs(self):
+		ret = []
+		for element in self.exifs:
+			ret.append(self.exifToArray(element))
+		return ret
 
-def usage():
-	print("")
-	print("PicciMario EXIF analyzer v. 0.1")
-	print("mario.piccinelli@gmail.com")
-	print("")
-	print("Usage:")
-	print("exifviewer.py filename")
-	print("")
+if __name__ == "__main__":
 
-filename = ""
-
-if (len(sys.argv) <= 1):
-	usage()
-	sys.exit(1)
-else:
-	filename = sys.argv[1]
-
-# init exif data manager
-
-exifs = ExifData()
-result = exifs.openFile(filename)
-
-if (result != 0):
-	print("Unable to init data file")
-	sys.exit(1)
-
-exifs.printExifs()
+	def usage():
+		print("")
+		print("PicciMario EXIF analyzer v. 0.1")
+		print("mario.piccinelli@gmail.com")
+		print("")
+		print("Usage:")
+		print("exifviewer.py filename")
+		print("")
+	
+	filename = ""
+	
+	if (len(sys.argv) <= 1):
+		usage()
+		sys.exit(1)
+	else:
+		filename = sys.argv[1]
+	
+	# init exif data manager
+	
+	exifs = ExifData()
+	result = exifs.openFile(filename)
+	
+	if (result != 0):
+		print("Unable to init data file")
+		sys.exit(1)
+	
+	exifs.printExifs()
