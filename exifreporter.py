@@ -245,21 +245,55 @@ Story.append(t)
 Story.append(Spacer(1, 2))
 
 for exif in exifs:
-	elementData = [
-		[
-			Paragraph(str(exif['tag']), styles["Small"]), 
-			Paragraph(str(exif['decoded']), styles["Small"]), 
-			Paragraph(str(exif['value']), styles["Small"])
+	if (exif['tag'] not in [37500]):
+
+		try:
+			valPar = Paragraph(str(exif['value']), styles['Small'])
+		except:
+			valPar = Paragraph(unicode(exif['value'], errors='replace'), styles['Small'])
+			for line in exifData.valInHex(exif).split('\n'):	
+				if (len(line) > 0):
+					exif['comments'].append(line)
+			
+		elementData = [
+			[
+				Paragraph(str(exif['tag']), styles["Small"]), 
+				Paragraph(str(exif['decoded']), styles["Small"]), 
+				valPar
+			]
 		]
-	]
-	for line in exif['comments']:
-		elementData.append(['', '', Paragraph(str(line), styles["CodeNoIndent"])])
+		
+		for line in exif['comments']:
+			elementData.append(['', '', Paragraph(str(line), styles["CodeNoIndent"])])
+		
+		t=Table(elementData, colWidths=[40, 130, 360])
+		t.setStyle(tableStyleStandard)
+		Story.append(t)
+		
+		Story.append(Spacer(1, 2))
+
+for exif in exifs:
 	
-	t=Table(elementData, colWidths=[40, 130, 360])
-	t.setStyle(tableStyleStandard)
-	Story.append(t)
-	
-	Story.append(Spacer(1, 2))
+	# Manage Maker notes in separate pages
+	if (exif['tag'] == 37500):
+		
+		Story.append(PageBreak())
+		Story.append(Paragraph("Maker Notes", styles['Heading2']))
+		
+		elementData = [
+			[
+				Paragraph(str(exif['tag']), styles["Small"]), 
+				Paragraph(str(exif['decoded']), styles["Small"]), 
+				Paragraph(str(exif['value']), styles["Small"]), 
+			]
+		]
+		
+		for line in exif['comments']:
+			elementData.append(['', '', Paragraph(str(line), styles["CodeNoIndent"])])
+		
+		t=Table(elementData, colWidths=[40, 130, 360])
+		t.setStyle(tableStyleStandard)
+		Story.append(t)
 
 # ------- DOC Generation ----------------------------------------------------
 

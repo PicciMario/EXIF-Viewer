@@ -236,7 +236,10 @@ class ExifData():
 			N+=length
 			if (len(result) > limit):
 				src = "";
-		return result		
+		return result	
+	
+	def valInHex(self, passedTag):
+			return self.dumpHex(passedTag['value'], length=16)
 	
 	def exifToArray(self, passedTag):
 		
@@ -546,7 +549,7 @@ class ExifData():
 				if (len(value) == 2):
 					value = "%.4f"%self._rational_to_num(value)
 			
-			if (tag in [41729, 41730]):
+			if (tag in []):
 				value = self.stringHex(value)		
 	
 		# Building return array
