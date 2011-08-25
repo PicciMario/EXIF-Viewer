@@ -301,9 +301,9 @@ class ExifData():
 			gpsData = self.decodeGpsData(self.getGpsData(value))
 			
 			if (gpsData['lat']):
-				comments.append("Latitude: %.8f"%gpsData['lat'])
+				comments.append("Latitude: %.12f"%gpsData['lat'])
 			if (gpsData['lon']):
-				comments.append("Longitude: %.8f"%gpsData['lon'])
+				comments.append("Longitude: %.12f"%gpsData['lon'])
 			if (gpsData['imgDir'] and gpsData['imgDirRef']):
 				comments.append("Img dir: %.2f %s"%(gpsData['imgDir'], gpsData['imgDirRef']))
 			if (gpsData['timeStamp']):
