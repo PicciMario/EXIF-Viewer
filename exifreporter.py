@@ -297,7 +297,7 @@ for exif in exifs:
 
 # ------- DOC Generation ----------------------------------------------------
 
-doc = SimpleDocTemplate("form_letter.pdf",pagesize=letter,
+doc = SimpleDocTemplate("imagereport.pdf",pagesize=letter,
                         rightMargin=72,leftMargin=72,
                         topMargin=72,bottomMargin=18)
 
