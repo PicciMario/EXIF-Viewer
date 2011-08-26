@@ -13,6 +13,10 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Preformatted, Space
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 
+# socket default timeout
+import socket
+socket.setdefaulttimeout(10)
+
 def usage():
 	print("")
 	print("PicciMario EXIF reported v. 0.1")
@@ -191,56 +195,57 @@ Story.append(Paragraph("FileSystem data", styles['Heading2']))
 
 stats = os.stat(filename)
 
-osData = [
-	[
-		Paragraph("Protection bits", styles["Small"]), 
-		Paragraph("%s"%bin(stats.st_mode), styles["Small"]),
-		Paragraph("Inode number", styles["Small"]), 
-		Paragraph("%s"%stats.st_ino, styles["Small"])
-	],
-	[
-		Paragraph("Device", styles["Small"]), 
-		Paragraph("%s"%stats.st_dev, styles["Small"]),
-		Paragraph("Number of hard links", styles["Small"]), 
-		Paragraph("%s"%stats.st_nlink, styles["Small"])
-	],
-	[
-		Paragraph("UID of the owner", styles["Small"]), 
-		Paragraph("%s"%stats.st_uid, styles["Small"]),
-		Paragraph("GID of the owner", styles["Small"]), 
-		Paragraph("%s"%stats.st_gid, styles["Small"])
-	],
-	[
-		Paragraph("Time of most recent access", styles["Small"]), 
-		Paragraph("%s"%time.ctime(stats.st_atime), styles["Small"]),
-		Paragraph("Time of most recent content modification", styles["Small"]), 
-		Paragraph("%s"%time.ctime(stats.st_mtime), styles["Small"])
-	]
+# otherTags stores data in 2 column format (tag, value)
+otherTags = []
+
+# attrs stores a list of attributes to append (if available) to otherTags
+# [attribute tag - attribute descr - type]
+# type:
+#    0 - none (string)
+#    1 - time
+#    2 - binary
+
+attrs = [
+	['st_mode', 'Protection bits', 2],
+	['st_ino', 'Inode number', 0],
+	['st_dev', 'Device', 0],
+	['st_nlink', 'Number of hard links', 0],
+	['st_uid', 'UID of the owner', 0],
+	['st_gid', 'GID of the owner', 0],
+	['st_atime', 'Time of most recent access', 1],
+	['st_mtime', 'Time of most recent content modification', 1],
+	['st_ctime', 'Time of most recent metadata change (time of creation in Windows systems)', 1],
+	['st_blocks', 'Number of blocks allocated', 0],
+	['st_blksize', 'Filesystem block size', 0],
+	['st_rdev', 'Type of device', 0],
+	['st_flags', 'User defined flags for file', 0],
+	['st_gen', 'File generation number', 0],
+	['st_birthtime', 'Time of file creation', 1],
+	['st_rsize', 'Rsize (mac os specific)', 0],
+	['st_creator', 'Creator (mac os specific)', 0],
+	['st_type', 'Type (mac os specific)', 0],
 ]
 
-otherTags = [
-	[
-		Paragraph("Time of most recent metadata change (time of creation in Windows systems)", styles["Small"]), 
-		Paragraph("%s"%time.ctime(stats.st_ctime), styles["Small"])
-	]
-]
+for attr in attrs:
+	if (hasattr(stats, attr[0])):
+		value = getattr(stats, attr[0])
+		
+		if (attr[2] == 1):
+			value = time.ctime(value)
+		elif (attr[2] == 2):
+			value = bin(value)
 
-if (hasattr(stats, "st_blocks")):
-	otherTags.append(
-		[
-			Paragraph("Number of blocks allocated", styles["Small"]), 
-			Paragraph("%s"%stats.st_blocks, styles["Small"])
-		]
-	)
+		otherTags.append(
+			[
+				Paragraph(attr[1], styles["Small"]), 
+				Paragraph("%s"%value, styles["Small"])
+			]
+		)
 
-if (hasattr(stats, "st_blksize")):
-	otherTags.append(
-		[
-			Paragraph("Filesystem block size", styles["Small"]), 
-			Paragraph("%s"%stats.st_blksize, styles["Small"])
-		]
-	)
+# osData stores data in 4 column format (tag1, value1, tag2, value2)
+osData = []
 
+# takes data from otherTags and append (two by two) to osData
 while True:
 	if (len(otherTags) >= 2):
 		osData.append([otherTags[0][0], otherTags[0][1], otherTags[1][0], otherTags[1][1]])
