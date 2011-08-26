@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from exifviewer import ExifData
-import sys, math, os, hashlib
+import sys, math, os, hashlib, time
 
 import PIL, urllib, cStringIO
 from PIL import ImageDraw
@@ -88,6 +88,16 @@ tableStyleStandard = TableStyle([
 	('RIGHTPADDING', (0,0), (-1,-1), 5),
 ])
 
+tableStyleSmall = TableStyle([
+	('GRID', (0,0), (-1,-1), 1, colors.black),
+	('TEXTCOLOR',(0,1),(1,-1),colors.black),
+	('SIZE', (0,0), (-1,-1), 10),
+	('TOPPADDING', (0,0), (-1,-1), 0),
+	('BOTTOMPADDING', (0,0), (-1,-1), 1),
+	('LEFTPADDING', (0,0), (-1,-1), 3),
+	('RIGHTPADDING', (0,0), (-1,-1), 3),
+])
+
 tableStyleImg = TableStyle([
 	('GRID', (0,0), (-1,-1), 1, colors.black),
 	('TEXTCOLOR',(0,1),(1,-1),colors.black),
@@ -167,7 +177,7 @@ imgData = Table(
 	],
 	colWidths=[70, 234]
 )
-imgData.setStyle(tableStyleStandard)
+imgData.setStyle(tableStyleSmall)
 
 t=Table([[im, imgData]], colWidths=[3*inch+6, 310])
 t.setStyle(tableStyleImg)
@@ -184,44 +194,39 @@ stats = os.stat(filename)
 osData = [
 	[
 		Paragraph("Protection bits", styles["Small"]), 
-		Paragraph("%s"%bin(stats.st_mode), styles["Small"])
-	],
-	[
+		Paragraph("%s"%bin(stats.st_mode), styles["Small"]),
 		Paragraph("Inode number", styles["Small"]), 
 		Paragraph("%s"%stats.st_ino, styles["Small"])
 	],
 	[
 		Paragraph("Device", styles["Small"]), 
-		Paragraph("%s"%stats.st_dev, styles["Small"])
-	],
-	[
+		Paragraph("%s"%stats.st_dev, styles["Small"]),
 		Paragraph("Number of hard links", styles["Small"]), 
 		Paragraph("%s"%stats.st_nlink, styles["Small"])
 	],
 	[
 		Paragraph("UID of the owner", styles["Small"]), 
-		Paragraph("%s"%stats.st_uid, styles["Small"])
-	],
-	[
+		Paragraph("%s"%stats.st_uid, styles["Small"]),
 		Paragraph("GID of the owner", styles["Small"]), 
 		Paragraph("%s"%stats.st_gid, styles["Small"])
 	],
 	[
 		Paragraph("Time of most recent access", styles["Small"]), 
-		Paragraph("%s"%stats.st_atime, styles["Small"])
-	],
-	[
+		Paragraph("%s"%time.ctime(stats.st_atime), styles["Small"]),
 		Paragraph("Time of most recent content modification", styles["Small"]), 
-		Paragraph("%s"%stats.st_mtime, styles["Small"])
-	],
+		Paragraph("%s"%time.ctime(stats.st_mtime), styles["Small"])
+	]
+]
+
+otherTags = [
 	[
 		Paragraph("Time of most recent metadata change (time of creation in Windows systems)", styles["Small"]), 
-		Paragraph("%s"%stats.st_ctime, styles["Small"])
+		Paragraph("%s"%time.ctime(stats.st_ctime), styles["Small"])
 	]
 ]
 
 if (hasattr(stats, "st_blocks")):
-	osData.append(
+	otherTags.append(
 		[
 			Paragraph("Number of blocks allocated", styles["Small"]), 
 			Paragraph("%s"%stats.st_blocks, styles["Small"])
@@ -229,15 +234,26 @@ if (hasattr(stats, "st_blocks")):
 	)
 
 if (hasattr(stats, "st_blksize")):
-	osData.append(
+	otherTags.append(
 		[
 			Paragraph("Filesystem block size", styles["Small"]), 
 			Paragraph("%s"%stats.st_blksize, styles["Small"])
 		]
 	)
 
-osDataTable = Table(osData, colWidths=[150, 380])
-osDataTable.setStyle(tableStyleStandard)
+while True:
+	if (len(otherTags) >= 2):
+		osData.append([otherTags[0][0], otherTags[0][1], otherTags[1][0], otherTags[1][1]])
+		otherTags.pop(0)
+		otherTags.pop(0)
+	elif (len(otherTags) == 1):
+		osData.append([otherTags[0][0], otherTags[0][1], "", ""])
+		otherTags.pop(0)
+	else:
+		break
+
+osDataTable = Table(osData, colWidths=[140, 125, 140, 125])
+osDataTable.setStyle(tableStyleSmall)
 Story.append(osDataTable)
 
 Story.append(Spacer(10, 20))
