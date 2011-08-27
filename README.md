@@ -6,7 +6,13 @@ This command line tool pronts a list of the EXIF data found in the passed image.
 
 Usage:
 
-  exifviewer.py filename
+  ./exifviewer.py filename
+  
+The package also contains anothere tool (exifreporter.py) which creates a pdf report from the analysis of an image.
+
+Usage:
+
+  ./exifreporter.py filename
 
 # Requires:
 
@@ -15,3 +21,5 @@ Usage:
 * Python Imaging Library (PIL). For Mac Os download from [here](http://www.pythonware.com/products/pil/). For Linux you should do something like:
   
   sudo apt-get install python-imaging python-imaging-tk
+
+* ReportLab Toolkit (open source version). You can download it [here](http://www.reportlab.com/software/opensource/rl-toolkit/download/).
