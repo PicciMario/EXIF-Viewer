@@ -55,9 +55,10 @@ styles.add(
 		name='CodeNoIndent',
 		fontName='Courier',
 		fontSize=8,
-		leading=8.8,
+		leading=12,
 		firstLineIndent=0,
-		leftIndent=0
+		leftIndent=0,
+		spaceBefore=6
 	)
 )
 
@@ -97,7 +98,19 @@ tableStyleSmall = TableStyle([
 	('TEXTCOLOR',(0,1),(1,-1),colors.black),
 	('SIZE', (0,0), (-1,-1), 10),
 	('TOPPADDING', (0,0), (-1,-1), 0),
-	('BOTTOMPADDING', (0,0), (-1,-1), 1),
+	('BOTTOMPADDING', (0,0), (-1,-1), 0),
+	('LEFTPADDING', (0,0), (-1,-1), 3),
+	('RIGHTPADDING', (0,0), (-1,-1), 3),
+])
+
+tableStyle4col = TableStyle([
+	('GRID', (0,0), (-1,-1), 1, colors.black),
+	('TEXTCOLOR',(0,1),(1,-1),colors.black),
+	('SIZE', (0,0), (-1,-1), 10),
+	('BACKGROUND',(0,0),(0,-1),colors.lightgrey),
+	('BACKGROUND',(2,0),(2,-1),colors.lightgrey),
+	('TOPPADDING', (0,0), (-1,-1), 0),
+	('BOTTOMPADDING', (0,0), (-1,-1), 0),
 	('LEFTPADDING', (0,0), (-1,-1), 3),
 	('RIGHTPADDING', (0,0), (-1,-1), 3),
 ])
@@ -258,7 +271,7 @@ while True:
 		break
 
 osDataTable = Table(osData, colWidths=[140, 125, 140, 125])
-osDataTable.setStyle(tableStyleSmall)
+osDataTable.setStyle(tableStyle4col)
 Story.append(osDataTable)
 
 Story.append(Spacer(10, 20))
@@ -384,7 +397,7 @@ for exif in exifs:
 			elementData.append(['', '', Paragraph(str(line), styles["CodeNoIndent"])])
 		
 		t=Table(elementData, colWidths=[40, 130, 360])
-		t.setStyle(tableStyleStandard)
+		t.setStyle(tableStyleSmall)
 		Story.append(t)
 		
 		Story.append(Spacer(1, 2))
