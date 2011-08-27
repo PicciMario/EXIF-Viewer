@@ -352,7 +352,7 @@ gpsData = exifData.decodeGpsData(exifData.getGpsData())
 
 if (gpsData != None):
 
-	Story.append(Paragraph("EXIFlocation data", styles['Heading2']))
+	Story.append(Paragraph("EXIF Location data", styles['Heading2']))
 
 	lat = gpsData['lat']
 	lon = gpsData['lon']
