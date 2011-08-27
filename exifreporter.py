@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
 from exifviewer import ExifData
-import sys, math, os, hashlib, time
+import sys, math, os, hashlib, time, urllib
+from xml.dom import minidom
 
-import PIL, urllib, cStringIO
+import PIL, cStringIO
 from PIL import ImageDraw
 	
 from reportlab.lib.enums import TA_JUSTIFY, TA_CENTER
@@ -274,7 +275,7 @@ osDataTable = Table(osData, colWidths=[140, 125, 140, 125])
 osDataTable.setStyle(tableStyle4col)
 Story.append(osDataTable)
 
-Story.append(Spacer(10, 20))
+Story.append(Spacer(10, 10))
 
 # ------- MAP Section ----------------------------------------------------
 
@@ -334,12 +335,33 @@ def gpsImg(filename, lat, lon, zoom):
 		print("Unable to download image for GPS data from OpenStreetMap")
 		return 1
 
+def reverseGeocode(lat, lon, zoom):
+	try:
+		url = "http://nominatim.openstreetmap.org/reverse?format=xml&lat=%s&lon=%s&zoom=%s&addressdetails=1"%(lat, lon, zoom)
+		dom = minidom.parse(urllib.urlopen(url))
+		address = dom.getElementsByTagName('result')
+		if (len(address) >= 1):
+			return address[0].firstChild.toxml()
+	except:
+		print("Unable to fetch reverse geocode data")
+		return None
+	
+	return None
+
 gpsData = exifData.decodeGpsData(exifData.getGpsData())
 
 if (gpsData != None):
 
+	Story.append(Paragraph("EXIFlocation data", styles['Heading2']))
+
 	lat = gpsData['lat']
 	lon = gpsData['lon']
+	
+	address = reverseGeocode(lat, lon, 14)
+	if (address != None):
+		Story.append(Paragraph("The photo seems to have been shot in: \"%s\""%address, styles['Normal']))
+		Story.append(Spacer(1, 10))
+
 	imgDim = 2.3*inch
 	
 	res1 = gpsImg("temp01.png", lat, lon, 7)
@@ -428,7 +450,7 @@ for exif in exifs:
 # ------- DOC Generation ----------------------------------------------------
 
 doc = SimpleDocTemplate("imagereport.pdf",pagesize=letter,
-                        rightMargin=72,leftMargin=72,
-                        topMargin=72,bottomMargin=18)
+                        rightMargin=40,leftMargin=40,
+                        topMargin=40,bottomMargin=40)
 
 doc.build(Story)
