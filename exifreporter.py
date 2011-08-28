@@ -1,12 +1,34 @@
 #!/usr/bin/env python
 
+"""
+EXIF reporter 
+(part of ExifViewer project - https://github.com/PicciMario/EXIF-Viewer)
+Copyright (c) 2011 PicciMario <mario.piccinelli@gmail.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+"""
+
+# Various dependencies
+import sys, math, os, hashlib, time, urllib, getopt
+
+# Exif Data Class
+# from the ExifViewer project too
 from exifviewer import ExifData
-import sys, math, os, hashlib, time, urllib
+
+# XML manager
+# to manage data read from reverse geocoding
 from xml.dom import minidom
 
+# Python Imaging Library
+# needed to handle images
 import PIL, cStringIO
 from PIL import ImageDraw
-	
+
+# ReportLab project dependencies
 from reportlab.lib.enums import TA_JUSTIFY, TA_CENTER
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
@@ -23,17 +45,50 @@ def usage():
 	print("PicciMario EXIF reported v. 0.1")
 	print("mario.piccinelli@gmail.com")
 	print("")
-	print("Usage:")
-	print("exifreporter.py filename")
+	print("Analyzes a JPG picture and prints a PDF report with informations about")
+	print("the file (as told by the filesystem) and about the image itself via its")
+	print("EXIF tags. Special care has been thrown in intepreting the GPS data, if")
+	print("present the report will contain a map of the location and an approximate")
+	print("reverse geocoding of the coordinates into their location name.")
 	print("")
+	print("Usage:")
+	print("exifreporter.py -f filename -o reportname")
+	print("")
+	print("If a report name is not provided, the tool will use the default: report.pdf.")
 
 filename = ""
+reportFileName = ""
 
-if (len(sys.argv) <= 1):
+try:
+	opts, args = getopt.getopt(sys.argv[1:], "hf:")
+except getopt.GetoptError:
 	usage()
+	sys.exit(0)
+
+for o,a in opts:
+	if o == "-h":
+		usage()
+		sys.exit(0)
+	elif o == "-f":
+		filename = a
+	elif o == "-o":
+		reportFileName == a
+
+if (len(filename) == 0):
+	usage()
+	print("You need to provide a in input file name.\n")
 	sys.exit(1)
-else:
-	filename = sys.argv[1]
+
+if (len(reportFileName) == 0):
+	defaultReportFileName = "report.pdf"
+	print("Didn't provide an output file name. Using default: %s"%defaultReportFileName)
+	reportFileName = defaultReportFileName
+
+# check file existence
+if (os.path.isfile(filename) == 0):
+	usage()
+	print("Provided input file does not exist.\n")
+	sys.exit(1)	
 
 # init exif data manager
 
@@ -449,7 +504,7 @@ for exif in exifs:
 
 # ------- DOC Generation ----------------------------------------------------
 
-doc = SimpleDocTemplate("imagereport.pdf",pagesize=letter,
+doc = SimpleDocTemplate(reportFileName, pagesize=letter,
                         rightMargin=40,leftMargin=40,
                         topMargin=40,bottomMargin=40)
 
