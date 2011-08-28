@@ -8,11 +8,12 @@ Usage:
 
   ./exifviewer.py filename
   
-The package also contains anothere tool (exifreporter.py) which creates a pdf report from the analysis of an image.
+The package also contains anothere tool (exifreporter.py) which analyzes a JPG picture and prints a PDF report with informations about the file (as told by the filesystem) and about the image itself via its EXIF tags. Special care has been thrown in intepreting the GPS data, if present the report will contain a map of the location and an approximate reverse geocoding of the coordinates into their location name.
 
 Usage:
 
-  ./exifreporter.py filename
+  ./exifreporter.py -f filename -o reportname
+
 
 # Requires:
 
