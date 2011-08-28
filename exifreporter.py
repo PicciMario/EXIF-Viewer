@@ -60,7 +60,7 @@ filename = ""
 reportFileName = ""
 
 try:
-	opts, args = getopt.getopt(sys.argv[1:], "hf:")
+	opts, args = getopt.getopt(sys.argv[1:], "hf:o:")
 except getopt.GetoptError:
 	usage()
 	sys.exit(0)
@@ -72,7 +72,7 @@ for o,a in opts:
 	elif o == "-f":
 		filename = a
 	elif o == "-o":
-		reportFileName == a
+		reportFileName = a
 
 if (len(filename) == 0):
 	usage()
