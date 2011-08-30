@@ -207,6 +207,16 @@ styles.add(
 
 styles.add(
 	ParagraphStyle(
+		name='SmallBold',
+		fontName='Times-Bold',
+		fontSize=8,
+		leading=12,
+		spaceBefore=6
+	)
+)
+
+styles.add(
+	ParagraphStyle(
 		name='Caption',
 		fontName='Times-Italic',
 		fontSize=8,
@@ -559,7 +569,7 @@ for key1 in key1unique:
 				Paragraph("Content", styles["Small"])
 			]
 		]
-		t=Table(headerData, colWidths=[40, 130, 360])
+		t=Table(headerData, colWidths=[30, 170, 330])
 		t.setStyle(tableStyleGray)
 		Story.append(t)
 		Story.append(Spacer(1, 2))
@@ -571,7 +581,7 @@ for key1 in key1unique:
 			
 			firstRow = [
 				Paragraph(str(exif['tag']), styles['Small']),
-				Paragraph("%s"%exif['key3'], styles['Small']), 
+				Paragraph("%s"%exif['key3'], styles['SmallBold']), 
 				Paragraph(str(exif['descr']), styles['Small'])
 			]
 			
