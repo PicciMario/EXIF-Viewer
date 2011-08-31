@@ -586,8 +586,10 @@ for key1 in key1unique:
 	# select unique values per key2
 	key2 = []
 	for element in exifs:
-		if (exif['key1'] != key1): continue
-		key2.append(str(element['key2']))
+		if (element['key1'] == key1): 
+			key2.append(str(element['key2']))
+		else:
+			continue
 	key2unique = sorted(set(key2))
 	
 	for key2 in key2unique:
@@ -618,10 +620,14 @@ for key1 in key1unique:
 				Paragraph(str(exif['descr']), styles['Small'])
 			]
 			
+			rawDataString = ""
+			if (len(exif['raw'].strip()) > 0):
+				rawDataString = "Raw data: %s"%str(exif['raw'])
+			
 			secondRow = [
 				"", 
 				Paragraph("type: %s x %s"%(exif['varNumber'], exif['varType']), styles['Small']), 
-				Paragraph("Raw data: %s"%exif['raw'], styles['CodeNoIndent'])
+				Paragraph(rawDataString, styles['CodeNoIndent'])
 			]
 		
 			elementData = [firstRow, secondRow]
