@@ -433,6 +433,21 @@ Story.append(Spacer(10, 10))
 
 # ------- MAP Section ----------------------------------------------------
 
+def ratString2Deg(data):
+	try:
+		deg, min, sec = string.split(data, " ")	 	
+	 	deg1, deg2 = string.split(deg, "/")
+	 	deg = float(deg1) / float(deg2) 	
+	 	min1, min2 = string.split(min, "/")
+	 	min = float(min1) / float(min2)
+		sec1, sec2 = string.split(sec, "/")
+	 	sec = float(sec1) / float(sec2)
+		ret = deg + (min/60) + (sec/60/60)
+		return ret
+	
+	except:
+		return None
+
 def deg2num(lat_deg, lon_deg, zoom):
   lat_rad = math.radians(lat_deg)
   n = 2.0 ** zoom
@@ -502,15 +517,33 @@ def reverseGeocode(lat, lon, zoom):
 	
 	return None
 
-#gpsData = exifData.decodeGpsData(exifData.getGpsData())
-gpsData = None
 
-if (gpsData != None):
+# search for GPS data
+gpsDataLat = None
+gpsDataLon = None
+gpsDataLatRef = 1
+gpsDataLonRef = 1
+
+for exif in exifs:
+	if (exif['key2'] == "GPSInfo" and exif['key3'] == "GPSLatitude"):
+		gpsDataLat = ratString2Deg(exif['raw'])
+	elif (exif['key2'] == "GPSInfo" and exif['key3'] == "GPSLongitude"):
+		gpsDataLon = ratString2Deg(exif['raw'])
+	elif (exif['key2'] == "GPSInfo" and exif['key3'] == "GPSLatitudeRef"):
+		if (exif['raw'] == 'S'):
+			gpsDataLatRef = -1
+	elif (exif['key2'] == "GPSInfo" and exif['key3'] == "GPSLongitudeRef"):
+		if (exif['raw'] == 'W'):
+			gpsDataLatRef = -1
+
+if (gpsDataLat and gpsDataLon):
+
+	print("Downloading GPS map data...")
 
 	Story.append(Paragraph("EXIF Location data", styles['Heading2']))
 
-	lat = gpsData['lat']
-	lon = gpsData['lon']
+	lat = gpsDataLat * gpsDataLatRef
+	lon = gpsDataLon * gpsDataLonRef
 	
 	address = reverseGeocode(lat, lon, 14)
 	if (address != None):
