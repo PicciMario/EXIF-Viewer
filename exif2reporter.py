@@ -91,6 +91,29 @@ if (os.path.isfile(filename) == 0):
 	print("Provided input file does not exist.\n")
 	sys.exit(1)	
 
+# check existence of temp dirs (or create)
+tempDirs = ['tmp', 'tmp/prw']
+
+for tempDir in tempDirs:
+	if (os.path.isdir(tempDir)):
+		continue
+	else:
+		try:
+			os.makedirs(tempDir)
+		except:
+			print("Unable to create temp dir: \"%s\". Check permissions."%tempDir)
+			sys.exit(1)
+
+# clear content of temp dirs
+for tempDir in tempDirs:
+	for file in os.listdir(tempDir):
+		try:
+			if os.path.isfile(os.path.join(tempDir, file)):
+				os.unlink(os.path.join(tempDir, file))
+		except Exception, e:
+			print e
+
+
 # launch EXIV2 to aquire tags
 print("Lauch EXIV2 to aquire tags...")
 command = [
@@ -310,6 +333,7 @@ try:
 except:
 	print("Unable to open image file.")
 	print("Error: %s"%sys.exc_info()[1])
+	sys.exit(1)
 
 Story.append(Paragraph("Image analysis report", styles["Title"]))
 
@@ -430,6 +454,106 @@ Story.append(osDataTable)
 
 Story.append(Spacer(10, 10))
 
+# ------- Previews Section ---------------------------------------------
+
+# read previews list with exiv2
+print("Lauch EXIV2 to acquire previews list...")
+command = [
+	"exiv2",
+	"-p",
+	"p",
+	filename
+]
+
+try:
+	p = subprocess.Popen(command, shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+except:
+	print("\nUnable to run EXIF2. Is it installed and available?")
+	print("If not, you have to download it from http://www.exiv2.org/\n")
+	sys.exit(1)
+
+previews = []
+while True:
+	o = p.stdout.readline()
+	if o == '' and p.poll() != None: break
+	previews.append(o)
+retval = p.wait()
+
+if (len(previews) > 0):
+	Story.append(Paragraph("Preview thumbnails in image data", styles['Heading2']))
+		
+	# extract previews
+	prwDir = "tmp/prw"
+	
+	print("Lauch EXIV2 to extract preview images...")
+	command = [
+		"exiv2",
+		"-ep",
+		"-l",
+		prwDir,
+		filename
+	]
+	
+	try:
+		p = subprocess.Popen(command, shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+	except:
+		print("\nUnable to run EXIF2. Is it installed and available?")
+		print("If not, you have to download it from http://www.exiv2.org/\n")
+		sys.exit(1)
+	
+	while True:
+		o = p.stdout.readline()
+		if o == '' and p.poll() != None: break		
+	retval = p.wait()
+
+	for imageFile in os.listdir(prwDir):
+		imagePath = os.path.join(prwDir, imageFile)
+
+		try:
+			imageRef = PILImage.open(imagePath)
+			imageFormat = imageRef.format
+			imageMode = imageRef.mode
+			imageSize = "%sx%s"%(imageRef.size[0], imageRef.size[1])
+			imageWidth = imageRef.size[0]
+			imageHeight = imageRef.size[1]
+		except:
+			print("Unable to open preview image file \"%s\"."%imagePath)
+			print("Error: %s"%sys.exc_info()[1])
+			continue
+
+		thumbWidth = 1.5*inch
+		thumbHeight = imageHeight * (float(thumbWidth) / float(imageWidth))
+		
+		im = Image(filename, thumbWidth, thumbHeight)
+		
+		imgData = Table(
+			[
+				[
+					Paragraph("Preview data size:", styles["Small"]),
+					Paragraph("%s kB"%(os.path.getsize(imagePath)/1024), styles["Small"])
+				],
+				[
+					Paragraph("Preview format", styles["Small"]), 
+					Paragraph(imageFormat, styles["Small"])
+				], 
+				[
+					Paragraph("Preview mode", styles["Small"]), 
+					Paragraph(imageMode, styles["Small"])
+				],
+				[
+					Paragraph("Preview size", styles["Small"]), 
+					Paragraph("%s px"%imageSize, styles["Small"])
+				],	
+		
+			],
+			colWidths=[70, 329]
+		)
+		imgData.setStyle(tableStyleSmall)
+		
+		previewData = Table([[im, imgData]], colWidths=[115, 405])
+		previewData.setStyle(tableStyleImg)
+		
+		Story.append(previewData)
 
 # ------- MAP Section ----------------------------------------------------
 
@@ -517,7 +641,6 @@ def reverseGeocode(lat, lon, zoom):
 	
 	return None
 
-
 # search for GPS data
 gpsDataLat = None
 gpsDataLon = None
@@ -552,15 +675,15 @@ if (gpsDataLat and gpsDataLon):
 
 	imgDim = 2.3*inch
 	
-	res1 = gpsImg("temp01.png", lat, lon, 7)
-	res2 = gpsImg("temp02.png", lat, lon, 10)
-	res3 = gpsImg("temp03.png", lat, lon, 13)
+	res1 = gpsImg("tmp/temp01.png", lat, lon, 7)
+	res2 = gpsImg("tmp/temp02.png", lat, lon, 10)
+	res3 = gpsImg("tmp/temp03.png", lat, lon, 13)
 	
 	if (res1 == 0 and res2 == 0 and res3 == 0):
 	
-		im1 = Image("temp01.png", imgDim, imgDim)
-		im2 = Image("temp02.png", imgDim, imgDim)
-		im3 = Image("temp03.png", imgDim, imgDim)
+		im1 = Image("tmp/temp01.png", imgDim, imgDim)
+		im2 = Image("tmp/temp02.png", imgDim, imgDim)
+		im3 = Image("tmp/temp03.png", imgDim, imgDim)
 	
 		t=Table([[im1, im2, im3]], colWidths=[imgDim + 10, imgDim + 10, imgDim + 10])
 		t.setStyle(tableStyleImg)
