@@ -118,7 +118,8 @@ for tempDir in tempDirs:
 print("Lauch EXIV2 to aquire tags...")
 command = [
 	"exiv2",
-	"-u",
+	"-q",
+	#"-u",
 	"-Pxkyct",
 	filename
 ]
@@ -140,7 +141,7 @@ while True:
 	except:
 		(tag, key, varType, varNumber) = string.split(o.strip("\n"), None, 3)
 		descr = ""
-
+	
 	key1, key2, key3 = string.split(key, ".")
 	
 	exif = {
@@ -160,7 +161,8 @@ retval = p.wait()
 print("Lauch EXIV2 to aquire raw values...")
 command = [
 	"exiv2",
-	"-u",
+	"-q",
+	#"-u",
 	"-Pxv",
 	filename
 ]
@@ -737,16 +739,24 @@ for key1 in key1unique:
 			if (exif['key1'] != key1): continue
 			if (exif['key2'] != key2): continue
 			
+			try:
+				descrString = unicode(exif['descr'], "utf-8")
+			except:
+				descString = "Unable to decode string"
+			
 			firstRow = [
 				Paragraph(str(exif['tag']), styles['Small']),
 				Paragraph("%s"%exif['key3'], styles['SmallBold']), 
-				Paragraph(str(exif['descr']), styles['Small'])
+				Paragraph(descrString, styles['Small'])
 			]
 			
 			rawDataString = ""
 			if (len(exif['raw'].strip()) > 0):
-				rawDataString = "Raw data: %s"%str(exif['raw'])
-			
+				try:
+					rawDataString = unicode("Raw data: %s"%str(exif['raw']), "utf-8")
+				except:
+					rawDataString = "Unable to decode string"
+		
 			secondRow = [
 				"", 
 				Paragraph("type: %s x %s"%(exif['varNumber'], exif['varType']), styles['Small']), 
