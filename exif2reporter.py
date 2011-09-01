@@ -41,6 +41,31 @@ from reportlab.lib.units import inch
 import socket
 socket.setdefaulttimeout(10)
 
+# insert a space in a string after each numChars non-space characters
+def wrapString(string, numChars=80):
+	completed = False
+	while (completed != True):
+	
+		consecutive = 0
+		posInString = 0
+		
+		for c in string:
+			posInString += 1
+			if (c not in [' ', '\n']):
+				consecutive += 1
+				if (consecutive >= numChars):
+					consecutive = 0
+					string = string[0:posInString] + " " + string[posInString:-1]
+					print(posInString)
+					continue
+					#return string
+			else:
+				consecutive = 0
+			
+		completed = True
+	
+	return string
+
 def usage():
 	print("")
 	print("PicciMario EXIF reported v. 0.1")
@@ -139,20 +164,34 @@ while True:
 	try:
 		(tag, key, varType, varNumber, descr) = string.split(o.strip("\n"), None, 4)
 	except:
-		(tag, key, varType, varNumber) = string.split(o.strip("\n"), None, 3)
-		descr = ""
+		try:
+			(tag, key, varType, varNumber) = string.split(o.strip("\n"), None, 3)
+			descr = ""
+		except:
+			print("Unable to decode key: \"%s\""%key)
+			continue	
 	
-	key1, key2, key3 = string.split(key, ".")
+	try:
+		key1, key2, key3 = string.split(key, ".")
+	except:
+		print("Unable to decode key: \"%s\""%key)
+		continue
+
+	try:
+		exif = {
+			"tag": int(tag, 16),
+			"key": key,
+			"key1": key1,
+			"key2": key2,
+			"key3": key3,
+			"varType": varType,
+			"varNumber": int(varNumber),
+			"descr": descr
+		}
+	except:
+		print("Unable to decode key: \"%s\""%key)
+		continue	
 	
-	exif = {
-		"tag": int(tag, 16),
-		"key1": key1,
-		"key2": key2,
-		"key3": key3,
-		"varType": varType,
-		"varNumber": int(varNumber),
-		"descr": descr
-	}
 	exifs.append(exif)
 	
 retval = p.wait()
@@ -163,7 +202,7 @@ command = [
 	"exiv2",
 	"-q",
 	#"-u",
-	"-Pxv",
+	"-Pkv",
 	filename
 ]
 try:
@@ -180,28 +219,36 @@ while True:
 	if o == '' and p.poll() != None: break
 
 	try:
-		(tag, raw) = string.split(o.strip("\n"), None, 1)
+		(key, raw) = string.split(o.strip("\n"), None, 2)
 	except:
-		tag = o.strip("\n")
+		key = o.strip("\n")
 		raw = ""
 	
-	exifRaw = {
-		"tag": int(tag, 16),
-		"raw": raw,
-	}
-	exifRaws.append(exifRaw)
+	try:
+		exifRaw = {
+			"raw": raw,
+			"key": key
+		}
+		exifRaws.append(exifRaw)
+	except:
+		print("Unable to decode raw key: \"%s\""%key)
+		continue	
 	
 retval = p.wait()
 
 # merge two dictionaries
 print("Merging values...")
 for exif in exifs:
-	tag = exif['tag']
 	for exifRaw in exifRaws:
-		tagRaw = exifRaw['tag']
-		if (tagRaw == tag):
+		if (exifRaw['key'] == exif['key']):
 			exif['raw'] = exifRaw['raw']
 			break
+
+for exif in exifs:
+	if ('raw' in exif.keys()):
+		continue
+	else:
+		exif['raw'] = ""
 
 # ------- PDF Styles ----------------------------------------------------
 
@@ -747,7 +794,7 @@ for key1 in key1unique:
 			firstRow = [
 				Paragraph(str(exif['tag']), styles['Small']),
 				Paragraph("%s"%exif['key3'], styles['SmallBold']), 
-				Paragraph(descrString, styles['Small'])
+				Paragraph(wrapString(descrString, numChars = 80), styles['Small'])
 			]
 			
 			rawDataString = ""
@@ -760,7 +807,7 @@ for key1 in key1unique:
 			secondRow = [
 				"", 
 				Paragraph("type: %s x %s"%(exif['varNumber'], exif['varType']), styles['Small']), 
-				Paragraph(rawDataString, styles['CodeNoIndent'])
+				Paragraph(wrapString(rawDataString, numChars = 65), styles['CodeNoIndent'])
 			]
 		
 			elementData = [firstRow, secondRow]
