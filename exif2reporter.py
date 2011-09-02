@@ -534,6 +534,7 @@ if printPreviews:
 	print("Lauch EXIV2 to acquire previews list...")
 	command = [
 		"exiv2",
+		"-q",
 		"-p",
 		"p",
 		filename
