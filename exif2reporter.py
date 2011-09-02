@@ -140,7 +140,7 @@ for tempDir in tempDirs:
 
 
 # launch EXIV2 to aquire tags
-print("Lauch EXIV2 to aquire tags...")
+print("Lauch EXIV2 to acquire tags...")
 command = [
 	"exiv2",
 	"-q",
@@ -219,7 +219,7 @@ while True:
 	if o == '' and p.poll() != None: break
 
 	try:
-		(key, raw) = string.split(o.strip("\n"), None, 2)
+		(key, raw) = string.split(o.strip("\n"), None, 1)
 	except:
 		key = o.strip("\n")
 		raw = ""
@@ -372,6 +372,10 @@ def fileMd5(original_filename):
 	except:
 		return ""
 
+# open image file and create a thumbnail in tmp/thmb.jpg
+
+thumbnailFile = "tmp/thmb.jpg"
+
 try:
 	imageRef = PILImage.open(filename)
 	imageFormat = imageRef.format
@@ -379,17 +383,25 @@ try:
 	imageSize = "%sx%s"%(imageRef.size[0], imageRef.size[1])
 	imageWidth = imageRef.size[0]
 	imageHeight = imageRef.size[1]
+
 except:
 	print("Unable to open image file.")
 	print("Error: %s"%sys.exc_info()[1])
 	sys.exit(1)
 
+try:
+	thumbWidth = int(3*inch)
+	thumbHeight = int(imageHeight * (float(thumbWidth) / float(imageWidth)))
+	imageRef.thumbnail((thumbWidth, thumbHeight), PILImage.ANTIALIAS)
+	imageRef.save(thumbnailFile, "JPEG")
+except:
+	print("Unable to save thumbnail of image file.")
+	print("Error: %s"%sys.exc_info()[1])
+	sys.exit(1)
+
 Story.append(Paragraph("Image analysis report", styles["Title"]))
 
-thumbWidth = 3*inch
-thumbHeight = imageHeight * (float(thumbWidth) / float(imageWidth))
-
-im = Image(filename, thumbWidth, thumbHeight)
+im = Image(thumbnailFile, thumbWidth, thumbHeight)
 
 imgData = Table(
 	[
@@ -809,6 +821,9 @@ for key1 in key1unique:
 				Paragraph("type: %s x %s"%(exif['varNumber'], exif['varType']), styles['Small']), 
 				Paragraph(wrapString(rawDataString, numChars = 65), styles['CodeNoIndent'])
 			]
+			
+			#print(exif['key'])
+			#print(rawDataString)
 		
 			elementData = [firstRow, secondRow]
 			
