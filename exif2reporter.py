@@ -41,6 +41,13 @@ from reportlab.lib.units import inch
 import socket
 socket.setdefaulttimeout(10)
 
+# sections switch (for debug purposes)
+printHeader 	= True
+printFS			= True
+printPreviews 	= True
+printMap 		= False
+printExif		= True
+
 # insert a space in a string after each numChars non-space characters
 def wrapString(string, numChars=80):
 	completed = False
@@ -355,203 +362,180 @@ Story = []
 
 # ------- Header Section ----------------------------------------------------
 
-def fileMd5(original_filename):
+if printHeader:
+
+	def fileMd5(original_filename):
+		try:
+			f = file(original_filename ,'rb')
+			
+			md5 = hashlib.md5()
+			while True:
+				data = f.read()
+				if not data:
+					break
+				md5.update(data)
+			md5String = md5.hexdigest()
+			
+			f.close()
+			return md5String
+		except:
+			return ""
+	
+	# open image file and create a thumbnail in tmp/thmb.jpg
+	
+	thumbnailFile = "tmp/thmb.jpg"
+	
 	try:
-		f = file(original_filename ,'rb')
-		
-		md5 = hashlib.md5()
-		while True:
-			data = f.read()
-			if not data:
-				break
-			md5.update(data)
-		md5String = md5.hexdigest()
-		
-		f.close()
-		return md5String
+		imageRef = PILImage.open(filename)
+		imageFormat = imageRef.format
+		imageMode = imageRef.mode
+		imageSize = "%sx%s"%(imageRef.size[0], imageRef.size[1])
+		imageWidth = imageRef.size[0]
+		imageHeight = imageRef.size[1]
+	
 	except:
-		return ""
-
-# open image file and create a thumbnail in tmp/thmb.jpg
-
-thumbnailFile = "tmp/thmb.jpg"
-
-try:
-	imageRef = PILImage.open(filename)
-	imageFormat = imageRef.format
-	imageMode = imageRef.mode
-	imageSize = "%sx%s"%(imageRef.size[0], imageRef.size[1])
-	imageWidth = imageRef.size[0]
-	imageHeight = imageRef.size[1]
-
-except:
-	print("Unable to open image file.")
-	print("Error: %s"%sys.exc_info()[1])
-	sys.exit(1)
-
-try:
-	thumbWidth = int(3*inch)
-	thumbHeight = int(imageHeight * (float(thumbWidth) / float(imageWidth)))
-	imageRef.thumbnail((thumbWidth, thumbHeight), PILImage.ANTIALIAS)
-	imageRef.save(thumbnailFile, "JPEG")
-except:
-	print("Unable to save thumbnail of image file.")
-	print("Error: %s"%sys.exc_info()[1])
-	sys.exit(1)
-
-Story.append(Paragraph("Image analysis report", styles["Title"]))
-
-im = Image(thumbnailFile, thumbWidth, thumbHeight)
-
-imgData = Table(
-	[
+		print("Unable to open image file.")
+		print("Error: %s"%sys.exc_info()[1])
+		sys.exit(1)
+	
+	try:
+		thumbWidth = int(3*inch)
+		thumbHeight = int(imageHeight * (float(thumbWidth) / float(imageWidth)))
+		imageRef.thumbnail((thumbWidth, thumbHeight), PILImage.ANTIALIAS)
+		imageRef.save(thumbnailFile, "JPEG")
+	except:
+		print("Unable to save thumbnail of image file.")
+		print("Error: %s"%sys.exc_info()[1])
+		sys.exit(1)
+	
+	Story.append(Paragraph("Image analysis report", styles["Title"]))
+	
+	im = Image(thumbnailFile, thumbWidth, thumbHeight)
+	
+	imgData = Table(
 		[
-			Paragraph("File name:", styles["Small"]),
-			Paragraph("%s"%filename, styles["Small"])
+			[
+				Paragraph("File name:", styles["Small"]),
+				Paragraph("%s"%filename, styles["Small"])
+			],
+			[
+				Paragraph("File size:", styles["Small"]),
+				Paragraph("%s kB"%(os.path.getsize(filename)/1024), styles["Small"])
+			],
+			[
+				Paragraph("File MD5:", styles["Small"]),
+				Paragraph("%s"%fileMd5(filename), styles["Small"])
+			],
+			[
+				Paragraph("Image format", styles["Small"]), 
+				Paragraph(imageFormat, styles["Small"])
+			], 
+			[
+				Paragraph("Image mode", styles["Small"]), 
+				Paragraph(imageMode, styles["Small"])
+			],
+			[
+				Paragraph("Image size", styles["Small"]), 
+				Paragraph("%s px"%imageSize, styles["Small"])
+			],	
+	
 		],
-		[
-			Paragraph("File size:", styles["Small"]),
-			Paragraph("%s kB"%(os.path.getsize(filename)/1024), styles["Small"])
-		],
-		[
-			Paragraph("File MD5:", styles["Small"]),
-			Paragraph("%s"%fileMd5(filename), styles["Small"])
-		],
-		[
-			Paragraph("Image format", styles["Small"]), 
-			Paragraph(imageFormat, styles["Small"])
-		], 
-		[
-			Paragraph("Image mode", styles["Small"]), 
-			Paragraph(imageMode, styles["Small"])
-		],
-		[
-			Paragraph("Image size", styles["Small"]), 
-			Paragraph("%s px"%imageSize, styles["Small"])
-		],	
-
-	],
-	colWidths=[70, 234]
-)
-imgData.setStyle(tableStyleSmall)
-
-t=Table([[im, imgData]], colWidths=[3*inch+6, 310])
-t.setStyle(tableStyleImg)
-Story.append(t)
-
-Story.append(Spacer(10, 20))
+		colWidths=[70, 234]
+	)
+	imgData.setStyle(tableStyleSmall)
+	
+	t=Table([[im, imgData]], colWidths=[3*inch+6, 310])
+	t.setStyle(tableStyleImg)
+	Story.append(t)
+	
+	Story.append(Spacer(10, 20))
 
 # ------- FileSystem Section ---------------------------------------------
 
-Story.append(Paragraph("FileSystem data", styles['Heading2']))
+if printFS:
 
-stats = os.stat(filename)
-
-# otherTags stores data in 2 column format (tag, value)
-otherTags = []
-
-# attrs stores a list of attributes to append (if available) to otherTags
-# [attribute tag - attribute descr - type]
-# type:
-#    0 - none (string)
-#    1 - time
-#    2 - binary
-
-attrs = [
-	['st_mode', 'Protection bits', 2],
-	['st_ino', 'Inode number', 0],
-	['st_dev', 'Device', 0],
-	['st_nlink', 'Number of hard links', 0],
-	['st_uid', 'UID of the owner', 0],
-	['st_gid', 'GID of the owner', 0],
-	['st_atime', 'Time of most recent access', 1],
-	['st_mtime', 'Time of most recent content modification', 1],
-	['st_ctime', 'Time of most recent metadata change (time of creation in Windows systems)', 1],
-	['st_blocks', 'Number of blocks allocated', 0],
-	['st_blksize', 'Filesystem block size', 0],
-	['st_rdev', 'Type of device', 0],
-	['st_flags', 'User defined flags for file', 0],
-	['st_gen', 'File generation number', 0],
-	['st_birthtime', 'Time of file creation', 1],
-	['st_rsize', 'Rsize (mac os specific)', 0],
-	['st_creator', 'Creator (mac os specific)', 0],
-	['st_type', 'Type (mac os specific)', 0],
-]
-
-for attr in attrs:
-	if (hasattr(stats, attr[0])):
-		value = getattr(stats, attr[0])
-		
-		if (attr[2] == 1):
-			value = time.ctime(value)
-		elif (attr[2] == 2):
-			value = bin(value)
-
-		otherTags.append(
-			[
-				Paragraph(attr[1], styles["Small"]), 
-				Paragraph("%s"%value, styles["Small"])
-			]
-		)
-
-# osData stores data in 4 column format (tag1, value1, tag2, value2)
-osData = []
-
-# takes data from otherTags and append (two by two) to osData
-while True:
-	if (len(otherTags) >= 2):
-		osData.append([otherTags[0][0], otherTags[0][1], otherTags[1][0], otherTags[1][1]])
-		otherTags.pop(0)
-		otherTags.pop(0)
-	elif (len(otherTags) == 1):
-		osData.append([otherTags[0][0], otherTags[0][1], "", ""])
-		otherTags.pop(0)
-	else:
-		break
-
-osDataTable = Table(osData, colWidths=[140, 125, 140, 125])
-osDataTable.setStyle(tableStyle4col)
-Story.append(osDataTable)
-
-Story.append(Spacer(10, 10))
+	Story.append(Paragraph("FileSystem data", styles['Heading2']))
+	
+	stats = os.stat(filename)
+	
+	# otherTags stores data in 2 column format (tag, value)
+	otherTags = []
+	
+	# attrs stores a list of attributes to append (if available) to otherTags
+	# [attribute tag - attribute descr - type]
+	# type:
+	#    0 - none (string)
+	#    1 - time
+	#    2 - binary
+	
+	attrs = [
+		['st_mode', 'Protection bits', 2],
+		['st_ino', 'Inode number', 0],
+		['st_dev', 'Device', 0],
+		['st_nlink', 'Number of hard links', 0],
+		['st_uid', 'UID of the owner', 0],
+		['st_gid', 'GID of the owner', 0],
+		['st_atime', 'Time of most recent access', 1],
+		['st_mtime', 'Time of most recent content modification', 1],
+		['st_ctime', 'Time of most recent metadata change (time of creation in Windows systems)', 1],
+		['st_blocks', 'Number of blocks allocated', 0],
+		['st_blksize', 'Filesystem block size', 0],
+		['st_rdev', 'Type of device', 0],
+		['st_flags', 'User defined flags for file', 0],
+		['st_gen', 'File generation number', 0],
+		['st_birthtime', 'Time of file creation', 1],
+		['st_rsize', 'Rsize (mac os specific)', 0],
+		['st_creator', 'Creator (mac os specific)', 0],
+		['st_type', 'Type (mac os specific)', 0],
+	]
+	
+	for attr in attrs:
+		if (hasattr(stats, attr[0])):
+			value = getattr(stats, attr[0])
+			
+			if (attr[2] == 1):
+				value = time.ctime(value)
+			elif (attr[2] == 2):
+				value = bin(value)
+	
+			otherTags.append(
+				[
+					Paragraph(attr[1], styles["Small"]), 
+					Paragraph("%s"%value, styles["Small"])
+				]
+			)
+	
+	# osData stores data in 4 column format (tag1, value1, tag2, value2)
+	osData = []
+	
+	# takes data from otherTags and append (two by two) to osData
+	while True:
+		if (len(otherTags) >= 2):
+			osData.append([otherTags[0][0], otherTags[0][1], otherTags[1][0], otherTags[1][1]])
+			otherTags.pop(0)
+			otherTags.pop(0)
+		elif (len(otherTags) == 1):
+			osData.append([otherTags[0][0], otherTags[0][1], "", ""])
+			otherTags.pop(0)
+		else:
+			break
+	
+	osDataTable = Table(osData, colWidths=[140, 125, 140, 125])
+	osDataTable.setStyle(tableStyle4col)
+	Story.append(osDataTable)
+	
+	Story.append(Spacer(10, 10))
 
 # ------- Previews Section ---------------------------------------------
 
-# read previews list with exiv2
-print("Lauch EXIV2 to acquire previews list...")
-command = [
-	"exiv2",
-	"-p",
-	"p",
-	filename
-]
+if printPreviews:
 
-try:
-	p = subprocess.Popen(command, shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-except:
-	print("\nUnable to run EXIF2. Is it installed and available?")
-	print("If not, you have to download it from http://www.exiv2.org/\n")
-	sys.exit(1)
-
-previews = []
-while True:
-	o = p.stdout.readline()
-	if o == '' and p.poll() != None: break
-	previews.append(o)
-retval = p.wait()
-
-if (len(previews) > 0):
-	Story.append(Paragraph("Preview thumbnails in image data", styles['Heading2']))
-		
-	# extract previews
-	prwDir = "tmp/prw"
-	
-	print("Lauch EXIV2 to extract preview images...")
+	# read previews list with exiv2
+	print("Lauch EXIV2 to acquire previews list...")
 	command = [
 		"exiv2",
-		"-ep",
-		"-l",
-		prwDir,
+		"-p",
+		"p",
 		filename
 	]
 	
@@ -562,276 +546,309 @@ if (len(previews) > 0):
 		print("If not, you have to download it from http://www.exiv2.org/\n")
 		sys.exit(1)
 	
+	previews = []
 	while True:
 		o = p.stdout.readline()
-		if o == '' and p.poll() != None: break		
+		if o == '' and p.poll() != None: break
+		previews.append(o)
 	retval = p.wait()
-
-	for imageFile in os.listdir(prwDir):
-		imagePath = os.path.join(prwDir, imageFile)
-
+	
+	if (len(previews) > 0):
+		Story.append(Paragraph("Preview thumbnails in image data", styles['Heading2']))
+			
+		# extract previews
+		prwDir = "tmp/prw"
+		
+		print("Lauch EXIV2 to extract preview images...")
+		command = [
+			"exiv2",
+			"-ep",
+			"-l",
+			prwDir,
+			filename
+		]
+		
 		try:
-			imageRef = PILImage.open(imagePath)
-			imageFormat = imageRef.format
-			imageMode = imageRef.mode
-			imageSize = "%sx%s"%(imageRef.size[0], imageRef.size[1])
-			imageWidth = imageRef.size[0]
-			imageHeight = imageRef.size[1]
+			p = subprocess.Popen(command, shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 		except:
-			print("Unable to open preview image file \"%s\"."%imagePath)
-			print("Error: %s"%sys.exc_info()[1])
-			continue
-
-		thumbWidth = 1.5*inch
-		thumbHeight = imageHeight * (float(thumbWidth) / float(imageWidth))
+			print("\nUnable to run EXIF2. Is it installed and available?")
+			print("If not, you have to download it from http://www.exiv2.org/\n")
+			sys.exit(1)
 		
-		im = Image(filename, thumbWidth, thumbHeight)
-		
-		imgData = Table(
-			[
+		while True:
+			o = p.stdout.readline()
+			if o == '' and p.poll() != None: break		
+		retval = p.wait()
+	
+		for imageFile in os.listdir(prwDir):
+			imagePath = os.path.join(prwDir, imageFile)
+	
+			try:
+				imageRef = PILImage.open(imagePath)
+				imageFormat = imageRef.format
+				imageMode = imageRef.mode
+				imageSize = "%sx%s"%(imageRef.size[0], imageRef.size[1])
+				imageWidth = imageRef.size[0]
+				imageHeight = imageRef.size[1]
+			except:
+				print("Unable to open preview image file \"%s\"."%imagePath)
+				print("Error: %s"%sys.exc_info()[1])
+				continue
+	
+			thumbWidth = 1.5*inch
+			thumbHeight = imageHeight * (float(thumbWidth) / float(imageWidth))
+			
+			im = Image(imagePath, thumbWidth, thumbHeight)
+			
+			imgData = Table(
 				[
-					Paragraph("Preview data size:", styles["Small"]),
-					Paragraph("%s kB"%(os.path.getsize(imagePath)/1024), styles["Small"])
+					[
+						Paragraph("Preview data size:", styles["Small"]),
+						Paragraph("%s kB"%(os.path.getsize(imagePath)/1024), styles["Small"])
+					],
+					[
+						Paragraph("Preview format", styles["Small"]), 
+						Paragraph(imageFormat, styles["Small"])
+					], 
+					[
+						Paragraph("Preview mode", styles["Small"]), 
+						Paragraph(imageMode, styles["Small"])
+					],
+					[
+						Paragraph("Preview size", styles["Small"]), 
+						Paragraph("%s px"%imageSize, styles["Small"])
+					],	
+			
 				],
-				[
-					Paragraph("Preview format", styles["Small"]), 
-					Paragraph(imageFormat, styles["Small"])
-				], 
-				[
-					Paragraph("Preview mode", styles["Small"]), 
-					Paragraph(imageMode, styles["Small"])
-				],
-				[
-					Paragraph("Preview size", styles["Small"]), 
-					Paragraph("%s px"%imageSize, styles["Small"])
-				],	
-		
-			],
-			colWidths=[70, 329]
-		)
-		imgData.setStyle(tableStyleSmall)
-		
-		previewData = Table([[im, imgData]], colWidths=[115, 405])
-		previewData.setStyle(tableStyleImg)
-		
-		Story.append(previewData)
+				colWidths=[70, 329]
+			)
+			imgData.setStyle(tableStyleSmall)
+			
+			previewData = Table([[im, imgData]], colWidths=[115, 405])
+			previewData.setStyle(tableStyleImg)
+			
+			Story.append(previewData)
 
 # ------- MAP Section ----------------------------------------------------
 
-def ratString2Deg(data):
-	try:
-		deg, min, sec = string.split(data, " ")	 	
-	 	deg1, deg2 = string.split(deg, "/")
-	 	deg = float(deg1) / float(deg2) 	
-	 	min1, min2 = string.split(min, "/")
-	 	min = float(min1) / float(min2)
-		sec1, sec2 = string.split(sec, "/")
-	 	sec = float(sec1) / float(sec2)
-		ret = deg + (min/60) + (sec/60/60)
-		return ret
+if printMap:
+
+	def ratString2Deg(data):
+		try:
+			deg, min, sec = string.split(data, " ")	 	
+		 	deg1, deg2 = string.split(deg, "/")
+		 	deg = float(deg1) / float(deg2) 	
+		 	min1, min2 = string.split(min, "/")
+		 	min = float(min1) / float(min2)
+			sec1, sec2 = string.split(sec, "/")
+		 	sec = float(sec1) / float(sec2)
+			ret = deg + (min/60) + (sec/60/60)
+			return ret
+		
+		except:
+			return None
 	
-	except:
+	def deg2num(lat_deg, lon_deg, zoom):
+	  lat_rad = math.radians(lat_deg)
+	  n = 2.0 ** zoom
+	  xtile = int((lon_deg + 180.0) / 360.0 * n)
+	  ytile = int((1.0 - math.log(math.tan(lat_rad) + (1 / math.cos(lat_rad))) / math.pi) / 2.0 * n)
+	  return (xtile, ytile)
+	
+	def num2deg(xtile, ytile, zoom):
+	  n = 2.0 ** zoom
+	  lon_deg = xtile / n * 360.0 - 180.0
+	  lat_rad = math.atan(math.sinh(math.pi * (1 - 2 * ytile / n)))
+	  lat_deg = math.degrees(lat_rad)
+	  return (lat_deg, lon_deg)
+	
+	def gpsUrl(lat, lon, zoom):
+		(x, y) = deg2num(lat, lon, zoom)
+		imUrl = "http://a.tile.openstreetmap.org/%s/%s/%s.png"%(zoom, x, y)
+		return imUrl
+	
+	def gpsImg(filename, lat, lon, zoom):
+		
+		x, y = deg2num(lat, lon, zoom)	
+		upperLeftLat, upperLeftLon = num2deg(x, y, zoom)
+		upperRightLat, upperRightLon = num2deg(x+1, y, zoom)
+		bottomLeftLat, bottomLeftLon = num2deg(x, y+1, zoom)
+		
+		#print("Upper Left: %s - %s"%(upperLeftLat, upperLeftLon))
+		#print("Upper Right: %s - %s"%(upperRightLat, upperRightLon))
+		#print("Bottom Left: %s - %s"%(bottomLeftLat, bottomLeftLon))
+		
+		deltaLat = upperLeftLat - bottomLeftLat
+		deltaLon = upperRightLon - upperLeftLon
+		
+		#print("X,Y: %s %s"%(dotX, dotY))
+		
+		try:
+			file = urllib.urlopen(gpsUrl(lat, lon, zoom))
+			imRead = cStringIO.StringIO(file.read())
+			im = PIL.Image.open(imRead)
+			draw = ImageDraw.Draw(im)
+			
+			imgHeight, imgWidth = im.size 
+			
+			dotY = imgWidth - int(float((lat - bottomLeftLat) * imgHeight) / float(deltaLat))
+			dotX = int(float((lon - upperLeftLon) * imgWidth) / float(deltaLon))
+			
+			rectWidth = 10
+			draw.rectangle([dotX-rectWidth, dotY-rectWidth, dotX+rectWidth, dotY+rectWidth], outline=0)
+			im.save(filename)
+			
+			return 0
+		
+		except:
+			print("Unable to download image for GPS data from OpenStreetMap")
+			return 1
+	
+	def reverseGeocode(lat, lon, zoom):
+		try:
+			url = "http://nominatim.openstreetmap.org/reverse?format=xml&lat=%s&lon=%s&zoom=%s&addressdetails=1"%(lat, lon, zoom)
+			dom = minidom.parse(urllib.urlopen(url))
+			address = dom.getElementsByTagName('result')
+			if (len(address) >= 1):
+				return address[0].firstChild.toxml()
+		except:
+			print("Unable to fetch reverse geocode data")
+			return None
+		
 		return None
-
-def deg2num(lat_deg, lon_deg, zoom):
-  lat_rad = math.radians(lat_deg)
-  n = 2.0 ** zoom
-  xtile = int((lon_deg + 180.0) / 360.0 * n)
-  ytile = int((1.0 - math.log(math.tan(lat_rad) + (1 / math.cos(lat_rad))) / math.pi) / 2.0 * n)
-  return (xtile, ytile)
-
-def num2deg(xtile, ytile, zoom):
-  n = 2.0 ** zoom
-  lon_deg = xtile / n * 360.0 - 180.0
-  lat_rad = math.atan(math.sinh(math.pi * (1 - 2 * ytile / n)))
-  lat_deg = math.degrees(lat_rad)
-  return (lat_deg, lon_deg)
-
-def gpsUrl(lat, lon, zoom):
-	(x, y) = deg2num(lat, lon, zoom)
-	imUrl = "http://a.tile.openstreetmap.org/%s/%s/%s.png"%(zoom, x, y)
-	return imUrl
-
-def gpsImg(filename, lat, lon, zoom):
 	
-	x, y = deg2num(lat, lon, zoom)	
-	upperLeftLat, upperLeftLon = num2deg(x, y, zoom)
-	upperRightLat, upperRightLon = num2deg(x+1, y, zoom)
-	bottomLeftLat, bottomLeftLon = num2deg(x, y+1, zoom)
+	# search for GPS data
+	gpsDataLat = None
+	gpsDataLon = None
+	gpsDataLatRef = 1
+	gpsDataLonRef = 1
 	
-	#print("Upper Left: %s - %s"%(upperLeftLat, upperLeftLon))
-	#print("Upper Right: %s - %s"%(upperRightLat, upperRightLon))
-	#print("Bottom Left: %s - %s"%(bottomLeftLat, bottomLeftLon))
+	for exif in exifs:
+		if (exif['key2'] == "GPSInfo" and exif['key3'] == "GPSLatitude"):
+			gpsDataLat = ratString2Deg(exif['raw'])
+		elif (exif['key2'] == "GPSInfo" and exif['key3'] == "GPSLongitude"):
+			gpsDataLon = ratString2Deg(exif['raw'])
+		elif (exif['key2'] == "GPSInfo" and exif['key3'] == "GPSLatitudeRef"):
+			if (exif['raw'] == 'S'):
+				gpsDataLatRef = -1
+		elif (exif['key2'] == "GPSInfo" and exif['key3'] == "GPSLongitudeRef"):
+			if (exif['raw'] == 'W'):
+				gpsDataLatRef = -1
 	
-	deltaLat = upperLeftLat - bottomLeftLat
-	deltaLon = upperRightLon - upperLeftLon
+	if (gpsDataLat and gpsDataLon):
 	
-	#print("X,Y: %s %s"%(dotX, dotY))
+		print("Downloading GPS map data...")
 	
-	try:
-		file = urllib.urlopen(gpsUrl(lat, lon, zoom))
-		imRead = cStringIO.StringIO(file.read())
-		im = PIL.Image.open(imRead)
-		draw = ImageDraw.Draw(im)
+		Story.append(Paragraph("EXIF Location data", styles['Heading2']))
+	
+		lat = gpsDataLat * gpsDataLatRef
+		lon = gpsDataLon * gpsDataLonRef
 		
-		imgHeight, imgWidth = im.size 
+		address = reverseGeocode(lat, lon, 14)
+		if (address != None):
+			Story.append(Paragraph("The photo seems to have been shot in: \"%s\""%address, styles['Normal']))
+			Story.append(Spacer(1, 10))
+	
+		imgDim = 2.3*inch
 		
-		dotY = imgWidth - int(float((lat - bottomLeftLat) * imgHeight) / float(deltaLat))
-		dotX = int(float((lon - upperLeftLon) * imgWidth) / float(deltaLon))
+		res1 = gpsImg("tmp/temp01.png", lat, lon, 7)
+		res2 = gpsImg("tmp/temp02.png", lat, lon, 10)
+		res3 = gpsImg("tmp/temp03.png", lat, lon, 13)
 		
-		rectWidth = 10
-		draw.rectangle([dotX-rectWidth, dotY-rectWidth, dotX+rectWidth, dotY+rectWidth], outline=0)
-		im.save(filename)
+		if (res1 == 0 and res2 == 0 and res3 == 0):
 		
-		return 0
-	
-	except:
-		print("Unable to download image for GPS data from OpenStreetMap")
-		return 1
-
-def reverseGeocode(lat, lon, zoom):
-	try:
-		url = "http://nominatim.openstreetmap.org/reverse?format=xml&lat=%s&lon=%s&zoom=%s&addressdetails=1"%(lat, lon, zoom)
-		dom = minidom.parse(urllib.urlopen(url))
-		address = dom.getElementsByTagName('result')
-		if (len(address) >= 1):
-			return address[0].firstChild.toxml()
-	except:
-		print("Unable to fetch reverse geocode data")
-		return None
-	
-	return None
-
-# search for GPS data
-gpsDataLat = None
-gpsDataLon = None
-gpsDataLatRef = 1
-gpsDataLonRef = 1
-
-for exif in exifs:
-	if (exif['key2'] == "GPSInfo" and exif['key3'] == "GPSLatitude"):
-		gpsDataLat = ratString2Deg(exif['raw'])
-	elif (exif['key2'] == "GPSInfo" and exif['key3'] == "GPSLongitude"):
-		gpsDataLon = ratString2Deg(exif['raw'])
-	elif (exif['key2'] == "GPSInfo" and exif['key3'] == "GPSLatitudeRef"):
-		if (exif['raw'] == 'S'):
-			gpsDataLatRef = -1
-	elif (exif['key2'] == "GPSInfo" and exif['key3'] == "GPSLongitudeRef"):
-		if (exif['raw'] == 'W'):
-			gpsDataLatRef = -1
-
-if (gpsDataLat and gpsDataLon):
-
-	print("Downloading GPS map data...")
-
-	Story.append(Paragraph("EXIF Location data", styles['Heading2']))
-
-	lat = gpsDataLat * gpsDataLatRef
-	lon = gpsDataLon * gpsDataLonRef
-	
-	address = reverseGeocode(lat, lon, 14)
-	if (address != None):
-		Story.append(Paragraph("The photo seems to have been shot in: \"%s\""%address, styles['Normal']))
-		Story.append(Spacer(1, 10))
-
-	imgDim = 2.3*inch
-	
-	res1 = gpsImg("tmp/temp01.png", lat, lon, 7)
-	res2 = gpsImg("tmp/temp02.png", lat, lon, 10)
-	res3 = gpsImg("tmp/temp03.png", lat, lon, 13)
-	
-	if (res1 == 0 and res2 == 0 and res3 == 0):
-	
-		im1 = Image("tmp/temp01.png", imgDim, imgDim)
-		im2 = Image("tmp/temp02.png", imgDim, imgDim)
-		im3 = Image("tmp/temp03.png", imgDim, imgDim)
-	
-		t=Table([[im1, im2, im3]], colWidths=[imgDim + 10, imgDim + 10, imgDim + 10])
-		t.setStyle(tableStyleImg)
-		Story.append(t)
+			im1 = Image("tmp/temp01.png", imgDim, imgDim)
+			im2 = Image("tmp/temp02.png", imgDim, imgDim)
+			im3 = Image("tmp/temp03.png", imgDim, imgDim)
 		
-		Story.append(Paragraph("Tiles provided by OpenStreetMap.org (c) OpenStreetMap contributors, CC-BY-SA", styles['Caption']))
-		
-		Story.append(Spacer(10, 20))
+			t=Table([[im1, im2, im3]], colWidths=[imgDim + 10, imgDim + 10, imgDim + 10])
+			t.setStyle(tableStyleImg)
+			Story.append(t)
+			
+			Story.append(Paragraph("Tiles provided by OpenStreetMap.org (c) OpenStreetMap contributors, CC-BY-SA", styles['Caption']))
+			
+			Story.append(Spacer(10, 20))
 
 # ------- EXIF Section ----------------------------------------------------
 
-# set for first key
-key1 = []
-for element in exifs:
-	key1.append(str(element['key1']))
-key1unique = sorted(set(key1))
+if printExif:
 
-for key1 in key1unique:
-
-	# section header
-	Story.append(Paragraph(str(key1), styles['Heading2']))
-
-	# select unique values per key2
-	key2 = []
+	# set for first key
+	key1 = []
 	for element in exifs:
-		if (element['key1'] == key1): 
-			key2.append(str(element['key2']))
-		else:
-			continue
-	key2unique = sorted(set(key2))
+		key1.append(str(element['key1']))
+	key1unique = sorted(set(key1))
 	
-	for key2 in key2unique:
-
+	for key1 in key1unique:
+	
 		# section header
-		Story.append(Paragraph(str(key2), styles['Heading3']))
+		Story.append(Paragraph(str(key1), styles['Heading2']))
+	
+		# select unique values per key2
+		key2 = []
+		for element in exifs:
+			if (element['key1'] == key1): 
+				key2.append(str(element['key2']))
+			else:
+				continue
+		key2unique = sorted(set(key2))
 		
-		headerData = [
-			[
-				Paragraph("Key", styles["Small"]), 
-				Paragraph("Name", styles["Small"]), 
-				Paragraph("Content", styles["Small"])
+		for key2 in key2unique:
+	
+			# section header
+			Story.append(Paragraph(str(key2), styles['Heading3']))
+			
+			headerData = [
+				[
+					Paragraph("Key", styles["Small"]), 
+					Paragraph("Name", styles["Small"]), 
+					Paragraph("Content", styles["Small"])
+				]
 			]
-		]
-		t=Table(headerData, colWidths=[30, 170, 330])
-		t.setStyle(tableStyleGray)
-		Story.append(t)
-		Story.append(Spacer(1, 2))
-		
-		for exif in sorted(exifs, key=lambda k: k['tag']) :
-			
-			if (exif['key1'] != key1): continue
-			if (exif['key2'] != key2): continue
-			
-			try:
-				descrString = unicode(exif['descr'], "utf-8")
-			except:
-				descString = "Unable to decode string"
-			
-			firstRow = [
-				Paragraph(str(exif['tag']), styles['Small']),
-				Paragraph("%s"%exif['key3'], styles['SmallBold']), 
-				Paragraph(wrapString(descrString, numChars = 80), styles['Small'])
-			]
-			
-			rawDataString = ""
-			if (len(exif['raw'].strip()) > 0):
-				try:
-					rawDataString = unicode("Raw data: %s"%str(exif['raw']), "utf-8")
-				except:
-					rawDataString = "Unable to decode string"
-		
-			secondRow = [
-				"", 
-				Paragraph("type: %s x %s"%(exif['varNumber'], exif['varType']), styles['Small']), 
-				Paragraph(wrapString(rawDataString, numChars = 65), styles['CodeNoIndent'])
-			]
-			
-			#print(exif['key'])
-			#print(rawDataString)
-		
-			elementData = [firstRow, secondRow]
-			
-			t=Table(elementData, colWidths=[30, 170, 330])
-			t.setStyle(tableStyleSmall)
+			t=Table(headerData, colWidths=[30, 170, 330])
+			t.setStyle(tableStyleGray)
 			Story.append(t)
-			
 			Story.append(Spacer(1, 2))
+			
+			for exif in sorted(exifs, key=lambda k: k['tag']) :
+				
+				if (exif['key1'] != key1): continue
+				if (exif['key2'] != key2): continue
+				
+				try:
+					descrString = unicode(exif['descr'], "utf-8")
+				except:
+					descString = "Unable to decode string"
+				
+				firstRow = [
+					Paragraph(str(exif['tag']), styles['Small']),
+					Paragraph("%s"%exif['key3'], styles['SmallBold']), 
+					Paragraph(wrapString(descrString, numChars = 80), styles['Small'])
+				]
+				
+				rawDataString = ""
+				if (len(exif['raw'].strip()) > 0):
+					try:
+						rawDataString = unicode("Raw data: %s"%str(exif['raw']), "utf-8")
+					except:
+						rawDataString = "Unable to decode string"
+			
+				secondRow = [
+					"", 
+					Paragraph("type: %s x %s"%(exif['varNumber'], exif['varType']), styles['Small']), 
+					Paragraph(wrapString(rawDataString, numChars = 65), styles['CodeNoIndent'])
+				]
+				
+				#print(exif['key'])
+				#print(rawDataString)
+			
+				elementData = [firstRow, secondRow]
+				
+				t=Table(elementData, colWidths=[30, 170, 330])
+				t.setStyle(tableStyleSmall)
+				Story.append(t)
+				
+				Story.append(Spacer(1, 2))
 
 
 # ------- DOC Generation ----------------------------------------------------
