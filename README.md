@@ -1,19 +1,22 @@
 # PicciMario EXIF analyzer v. 0.1
 
 mario.piccinelli@gmail.com
-
-This command line tool pronts a list of the EXIF data found in the passed image. The most important tags are decoded. All info about the EXIF standard is taken from http://www.exif.org/Exif2-2.PDF.
-
-Usage:
-
-  ./exifviewer.py filename
   
-The package also contains anothere tool (exifreporter.py) which analyzes a JPG picture and prints a PDF report with informations about the file (as told by the filesystem) and about the image itself via its EXIF tags. Special care has been thrown in intepreting the GPS data, if present the report will contain a map of the location and an approximate reverse geocoding of the coordinates into their location name.
+This command line tool is a wrapper of the text-only utility [exiv2](http://www.exiv2.org/). Analyzes a JPG picture and creates a forensically sound PDF report with informations about the file (as told by the filesystem) and about the image itself via its EXIF/IPTC/XMP tags. 
+
+Special features:
+
+* If GPS data are found in the EXIF tags, the report will contain a map of the location and an approximate reverse geocoding of the coordinates into their location name. Everything thanks to OpenStreetMap.org.
+
+* If thumbnails are embedded in the original file, these will be extracted, analyzed and included in the report.
 
 Usage:
 
-  ./exifreporter.py -f filename -o reportname
+  ./exif2reporter.py -f inputfile 
+  
+Other options:
 
+  -o reportname (default: report.pdf)
 
 # Requires:
 
@@ -24,3 +27,5 @@ Usage:
   sudo apt-get install python-imaging python-imaging-tk
 
 * ReportLab Toolkit (open source version). You can download it [here](http://www.reportlab.com/software/opensource/rl-toolkit/download/).
+
+* The command line utility exiv2 must be present on your computer. You can download and install it from [here](http://www.exiv2.org/).
