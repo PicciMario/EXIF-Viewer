@@ -45,7 +45,7 @@ socket.setdefaulttimeout(10)
 printHeader 	= True
 printFS			= True
 printPreviews 	= True
-printMap 		= False
+printMap 		= True
 printExif		= True
 
 # insert a space in a string after each numChars non-space characters
@@ -665,7 +665,8 @@ if printMap:
 	
 	def gpsUrl(lat, lon, zoom):
 		(x, y) = deg2num(lat, lon, zoom)
-		imUrl = "http://a.tile.openstreetmap.org/%s/%s/%s.png"%(zoom, x, y)
+		imUrl = "http://tile.openstreetmap.org/%s/%s/%s.png"%(zoom, x, y)
+		#imUrl = "http://tah.openstreetmap.org/Tiles/tile/%s/%s/%s.png"%(zoom, x, y)
 		return imUrl
 	
 	def gpsImg(filename, lat, lon, zoom):
@@ -685,7 +686,8 @@ if printMap:
 		#print("X,Y: %s %s"%(dotX, dotY))
 		
 		try:
-			file = urllib.urlopen(gpsUrl(lat, lon, zoom))
+			fileUrl = gpsUrl(lat, lon, zoom)
+			file = urllib.urlopen(fileUrl)
 			imRead = cStringIO.StringIO(file.read())
 			im = PIL.Image.open(imRead)
 			draw = ImageDraw.Draw(im)
@@ -712,8 +714,10 @@ if printMap:
 			address = dom.getElementsByTagName('result')
 			if (len(address) >= 1):
 				return address[0].firstChild.toxml()
+			else:
+				print("Unable to reverse geocode the GPS data provided. Maybe OpenStreetMap Nominatim service is unavailable fot this place.")
 		except:
-			print("Unable to fetch reverse geocode data")
+			print("Unable to fetch reverse geocode data. Maybe OpenStreetMap Nominatim service is offline.")
 			return None
 		
 		return None
@@ -753,8 +757,11 @@ if printMap:
 		imgDim = 2.3*inch
 		
 		res1 = gpsImg("tmp/temp01.png", lat, lon, 7)
+		if (res1 == 0): print(" - downloaded first map from OpenStreetMap.org")
 		res2 = gpsImg("tmp/temp02.png", lat, lon, 10)
+		if (res2 == 0): print(" - downloaded second map from OpenStreetMap.org")
 		res3 = gpsImg("tmp/temp03.png", lat, lon, 13)
+		if (res3 == 0): print(" - downloaded third map from OpenStreetMap.org")
 		
 		if (res1 == 0 and res2 == 0 and res3 == 0):
 		
